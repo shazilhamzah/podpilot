@@ -178,12 +178,24 @@ def snapshot():
     except Exception:
         pass
 
+    active_pvcs = set()
     try:
         pods = core_v1.list_pod_for_all_namespaces().items
         for pod in pods:
             name = pod.metadata.name
             namespace = pod.metadata.namespace
             status = pod.status.phase
+            
+            pod_non_root = False
+            if pod.spec.security_context and pod.spec.security_context.run_as_non_root:
+                pod_non_root = True
+            
+            runs_as_root = not pod_non_root
+            
+            if pod.spec.volumes:
+                for vol in pod.spec.volumes:
+                    if vol.persistent_volume_claim:
+                        active_pvcs.add(vol.persistent_volume_claim.claim_name)
             
             restart_count = 0
             if pod.status.container_statuses:
@@ -199,6 +211,12 @@ def snapshot():
                 for container in pod.spec.containers:
                     if container.image and container.image not in images:
                         images.append(container.image)
+                        
+                    if container.security_context and container.security_context.run_as_non_root is not None:
+                        if container.security_context.run_as_non_root is False:
+                            runs_as_root = True
+                    elif not pod_non_root:
+                        runs_as_root = True
                     
                     if container.resources:
                         requests = container.resources.requests or {}
@@ -225,7 +243,8 @@ def snapshot():
                 "mem_actual_gb": p_metrics['mem'],
                 "has_cpu_limit": has_cpu_limit,
                 "has_mem_limit": has_mem_limit,
-                "images": images
+                "images": images,
+                "runs_as_root": runs_as_root
             })
     except Exception:
         pass
@@ -272,7 +291,8 @@ def snapshot():
                 "namespace": pvc.metadata.namespace,
                 "status": pvc.status.phase,
                 "capacity_gb": parse_memory(capacity_str),
-                "storage_class": pvc.spec.storage_class_name or ""
+                "storage_class": pvc.spec.storage_class_name or "",
+                "is_attached": pvc.metadata.name in active_pvcs
             })
     except Exception:
         pass

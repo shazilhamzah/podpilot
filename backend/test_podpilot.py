@@ -52,6 +52,7 @@ def _make_pod(
     has_cpu_limit=True,
     has_mem_limit=True,
     image="nginx:stable",
+    runs_as_root=False,
 ):
     return {
         "name": name,
@@ -65,6 +66,7 @@ def _make_pod(
         "has_cpu_limit": has_cpu_limit,
         "has_mem_limit": has_mem_limit,
         "image": image,
+        "runs_as_root": runs_as_root,
     }
 
 
@@ -99,12 +101,13 @@ def _make_service(name="svc", namespace="default", svc_type="ClusterIP",
     }
 
 
-def _make_pvc(name="pvc-1", namespace="default", status="Bound", capacity_gb=10.0):
+def _make_pvc(name="pvc-1", namespace="default", status="Bound", capacity_gb=10.0, is_attached=True):
     return {
         "name": name,
         "namespace": namespace,
         "status": status,
         "capacity_gb": capacity_gb,
+        "is_attached": is_attached,
     }
 
 

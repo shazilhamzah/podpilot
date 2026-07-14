@@ -13,6 +13,7 @@ def analyze(prompt: str, slice_data: dict) -> str:
         model=os.getenv("MODEL"),
         temperature=0.2,
         max_tokens=2048,
+        response_format={"type": "json_object"},
     )
     return chat_completion.choices[0].message.content
 
@@ -218,7 +219,7 @@ def analyze_performance(snapshot: dict) -> dict:
     prompt = """You are analyzing the performance of a Kubernetes cluster.
 Look for pods in Pending state that cannot be scheduled — these are
 critical. Look for pods where cpu_actual is more than 85% of
-cpu_requested — these are being throttled, flag as warning.
+cpu_requested — this is a proxy for high utilization or throttling, flag as warning.
 Look for nodes where cpu_usage is more than 80% of cpu_capacity.
 
 Respond ONLY in this JSON format, no other text:
@@ -243,10 +244,8 @@ def analyze_storage(snapshot: dict) -> dict:
     slice_data = slice_storage(snapshot)
     prompt = """You are analyzing the storage of a Kubernetes cluster.
 Look for PVCs in Pending state — these are critical as workloads
-depending on them will fail. Look for PVCs that appear to be
-unattached or orphaned — these are warnings as they waste money.
-A PVC is likely orphaned if its name contains 'orphan' or if no
-running pod appears to be using it based on naming.
+depending on them will fail. Look for PVCs where is_attached is false —
+these are orphaned and waste money, flag as warnings.
 
 Respond ONLY in this JSON format, no other text:
 {
@@ -274,6 +273,7 @@ depending on what they expose. Pods with no CPU or memory limits are
 warnings as they can be exploited for resource exhaustion.
 Flag every NodePort service as critical.
 Flag every pod missing resource limits as warning.
+Flag every pod where runs_as_root is true as a warning.
 
 Respond ONLY in this JSON format, no other text:
 {
@@ -321,7 +321,15 @@ def proactive_health_check(snapshot: dict) -> dict:
     seen = set()
     deduped_issues = []
     for issue in all_issues:
-        key = (issue.get("affected_resource"), issue.get("title"))
+        # Cast to str because AI sometimes returns a list of resources instead of a string
+        res = str(issue.get("affected_resource"))
+        title = str(issue.get("title"))
+        
+        # Update the issue dict if it was a list so it's JSON serializable easily
+        if isinstance(issue.get("affected_resource"), list):
+            issue["affected_resource"] = res
+            
+        key = (res, title)
         if key not in seen:
             seen.add(key)
             deduped_issues.append(issue)

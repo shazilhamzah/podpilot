@@ -54,7 +54,8 @@ def sanitize(snapshot: dict) -> dict:
             "cost_per_hour": float(pod.get("cost_per_hour") or 0.0),
             "wasted_cost_per_hour": float(pod.get("wasted_cost_per_hour") or 0.0),
             "wasted_cost_per_month": float(pod.get("wasted_cost_per_month") or 0.0),
-            "images": pod.get("images", [])
+            "images": pod.get("images", []),
+            "runs_as_root": bool(pod.get("runs_as_root") or False)
         })
         
     # Deployments
@@ -82,7 +83,8 @@ def sanitize(snapshot: dict) -> dict:
             "namespace": str(pvc.get("namespace", "")),
             "status": str(pvc.get("status", "")),
             "capacity_gb": float(pvc.get("capacity_gb", 0.0)),
-            "storage_class": str(pvc.get("storage_class", ""))
+            "storage_class": str(pvc.get("storage_class", "")),
+            "is_attached": bool(pvc.get("is_attached") or False)
         })
 
     # Token check
