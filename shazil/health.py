@@ -1,0 +1,380 @@
+import json
+import re
+from analyzer import client
+
+def analyze(prompt: str, slice_data: dict) -> str:
+    import json
+    snapshot_json = json.dumps(slice_data, default=str)
+    full_prompt = f"Here is the current cluster snapshot slice:\n\n{snapshot_json}\n\n{prompt}"
+    
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": full_prompt}],
+        model="llama-3.3-70b-versatile",
+        temperature=0.2,
+        max_tokens=2048,
+    )
+    return chat_completion.choices[0].message.content
+
+# ═══════════════════════════════════════
+# SECTION 1 — SLICE EXTRACTION HELPERS
+# ═══════════════════════════════════════
+
+def slice_cost(snapshot: dict) -> dict:
+    pods = []
+    for p in snapshot.get("pods", []):
+        if p.get("wasted_cost_per_month") is not None and p.get("wasted_cost_per_month") > 0.5:
+            pods.append({
+                "name": p.get("name"),
+                "namespace": p.get("namespace"),
+                "cpu_requested": p.get("cpu_requested"),
+                "cpu_actual": p.get("cpu_actual"),
+                "mem_requested_gb": p.get("mem_requested_gb"),
+                "mem_actual_gb": p.get("mem_actual_gb"),
+                "wasted_cost_per_hour": p.get("wasted_cost_per_hour"),
+                "wasted_cost_per_month": p.get("wasted_cost_per_month")
+            })
+    pvcs = [
+        {
+            "name": pvc.get("name"),
+            "namespace": pvc.get("namespace"),
+            "status": pvc.get("status")
+        } for pvc in snapshot.get("pvcs", [])
+    ]
+    return {"cost_summary": snapshot.get("cost_summary", {}), "pods": pods, "pvcs": pvcs}
+
+def slice_reliability(snapshot: dict) -> dict:
+    pods = []
+    for p in snapshot.get("pods", []):
+        if p.get("restart_count", 0) > 3 or p.get("status") != "Running":
+            pods.append({
+                "name": p.get("name"),
+                "namespace": p.get("namespace"),
+                "status": p.get("status"),
+                "restart_count": p.get("restart_count"),
+                "has_cpu_limit": p.get("has_cpu_limit"),
+                "has_mem_limit": p.get("has_mem_limit")
+            })
+    deployments = []
+    for d in snapshot.get("deployments", []):
+        r_ready = d.get("ready_replicas")
+        r_desired = d.get("desired_replicas")
+        if r_ready is not None and r_desired is not None and r_ready < r_desired:
+            deployments.append({
+                "name": d.get("name"),
+                "namespace": d.get("namespace"),
+                "desired_replicas": r_desired,
+                "ready_replicas": r_ready
+            })
+    return {"pods": pods, "deployments": deployments}
+
+def slice_performance(snapshot: dict) -> dict:
+    nodes = [
+        {
+            "name": n.get("name"),
+            "cpu_capacity": n.get("cpu_capacity"),
+            "cpu_usage": n.get("cpu_usage"),
+            "mem_capacity_gb": n.get("mem_capacity_gb"),
+            "mem_usage_gb": n.get("mem_usage_gb")
+        } for n in snapshot.get("nodes", [])
+    ]
+    pods = []
+    for p in snapshot.get("pods", []):
+        status = p.get("status")
+        cpu_a = p.get("cpu_actual")
+        cpu_r = p.get("cpu_requested")
+        if status == "Pending" or (
+            cpu_a is not None and cpu_r is not None and 
+            cpu_a > 0 and cpu_r > 0 and 
+            (cpu_a / cpu_r) > 0.85
+        ):
+            pods.append({
+                "name": p.get("name"),
+                "namespace": p.get("namespace"),
+                "status": status,
+                "cpu_requested": cpu_r,
+                "cpu_actual": cpu_a,
+                "mem_requested_gb": p.get("mem_requested_gb"),
+                "mem_actual_gb": p.get("mem_actual_gb")
+            })
+    return {"nodes": nodes, "pods": pods}
+
+def slice_storage(snapshot: dict) -> dict:
+    return {
+        "pvcs": [
+            {
+                "name": pvc.get("name"),
+                "namespace": pvc.get("namespace"),
+                "status": pvc.get("status"),
+                "capacity_gb": pvc.get("capacity_gb"),
+                "storage_class": pvc.get("storage_class")
+            } for pvc in snapshot.get("pvcs", [])
+        ]
+    }
+
+def slice_security(snapshot: dict) -> dict:
+    services = []
+    for s in snapshot.get("services", []):
+        if s.get("type") in ["NodePort", "LoadBalancer"]:
+            services.append({
+                "name": s.get("name"),
+                "namespace": s.get("namespace"),
+                "type": s.get("type"),
+                "port": s.get("port")
+            })
+    pods = [
+        {
+            "name": p.get("name"),
+            "namespace": p.get("namespace"),
+            "has_cpu_limit": p.get("has_cpu_limit"),
+            "has_mem_limit": p.get("has_mem_limit")
+        } for p in snapshot.get("pods", [])
+    ]
+    deployments = [
+        {
+            "name": d.get("name"),
+            "namespace": d.get("namespace")
+        } for d in snapshot.get("deployments", [])
+    ]
+    return {"services": services, "pods": pods, "deployments": deployments}
+
+# ═══════════════════════════════════════
+# SECTION 4 — JSON PARSING HELPER
+# ═══════════════════════════════════════
+
+def parse_ai_json(response: str) -> dict:
+    # strip markdown code fences if present
+    cleaned = re.sub(r"```json|```", "", response).strip()
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        # attempt to extract first { } block
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except:
+                pass
+    return {"issues": [], "summary": "Failed to parse AI response."}
+
+# ═══════════════════════════════════════
+# SECTION 2 — FIVE FOCUSED ANALYZERS
+# ═══════════════════════════════════════
+
+def analyze_cost(snapshot: dict) -> dict:
+    slice_data = slice_cost(snapshot)
+    prompt = """You are analyzing the cost and waste of a Kubernetes cluster.
+Look for pods with high wasted_cost_per_month (requested much more than
+actual usage). Look for PVCs that might be sitting unused.
+Flag any pod wasting more than $5/month as warning,
+more than $20/month as critical.
+
+Respond ONLY in this JSON format, no other text:
+{
+  "issues": [
+    {
+      "severity": "critical" | "warning" | "info",
+      "title": "short title under 10 words",
+      "description": "one sentence explanation",
+      "affected_resource": "exact pod/deployment/service/pvc name"
+    }
+  ],
+  "summary": "one sentence overall summary of this category"
+}"""
+    response = analyze(prompt, slice_data)
+    parsed = parse_ai_json(response)
+    if "issues" not in parsed:
+        return {"issues": [], "summary": "Cost analysis failed to parse."}
+    return parsed
+
+def analyze_reliability(snapshot: dict) -> dict:
+    slice_data = slice_reliability(snapshot)
+    prompt = """You are analyzing the reliability and health of a Kubernetes
+cluster. Look for pods in CrashLoopBackOff or Pending status, high
+restart counts, and deployments with ready_replicas less than
+desired_replicas. Any CrashLoopBackOff pod is critical. Any deployment
+with 0 ready replicas is critical. Missing resource limits is a warning.
+
+Respond ONLY in this JSON format, no other text:
+{
+  "issues": [
+    {
+      "severity": "critical" | "warning" | "info",
+      "title": "short title under 10 words",
+      "description": "one sentence explanation",
+      "affected_resource": "exact pod/deployment/service/pvc name"
+    }
+  ],
+  "summary": "one sentence overall summary of this category"
+}"""
+    response = analyze(prompt, slice_data)
+    parsed = parse_ai_json(response)
+    if "issues" not in parsed:
+        return {"issues": [], "summary": "Reliability analysis failed to parse."}
+    return parsed
+
+def analyze_performance(snapshot: dict) -> dict:
+    slice_data = slice_performance(snapshot)
+    prompt = """You are analyzing the performance of a Kubernetes cluster.
+Look for pods in Pending state that cannot be scheduled — these are
+critical. Look for pods where cpu_actual is more than 85% of
+cpu_requested — these are being throttled, flag as warning.
+Look for nodes where cpu_usage is more than 80% of cpu_capacity.
+
+Respond ONLY in this JSON format, no other text:
+{
+  "issues": [
+    {
+      "severity": "critical" | "warning" | "info",
+      "title": "short title under 10 words",
+      "description": "one sentence explanation",
+      "affected_resource": "exact pod/deployment/service/pvc name"
+    }
+  ],
+  "summary": "one sentence overall summary of this category"
+}"""
+    response = analyze(prompt, slice_data)
+    parsed = parse_ai_json(response)
+    if "issues" not in parsed:
+        return {"issues": [], "summary": "Performance analysis failed to parse."}
+    return parsed
+
+def analyze_storage(snapshot: dict) -> dict:
+    slice_data = slice_storage(snapshot)
+    prompt = """You are analyzing the storage of a Kubernetes cluster.
+Look for PVCs in Pending state — these are critical as workloads
+depending on them will fail. Look for PVCs that appear to be
+unattached or orphaned — these are warnings as they waste money.
+A PVC is likely orphaned if its name contains 'orphan' or if no
+running pod appears to be using it based on naming.
+
+Respond ONLY in this JSON format, no other text:
+{
+  "issues": [
+    {
+      "severity": "critical" | "warning" | "info",
+      "title": "short title under 10 words",
+      "description": "one sentence explanation",
+      "affected_resource": "exact pod/deployment/service/pvc name"
+    }
+  ],
+  "summary": "one sentence overall summary of this category"
+}"""
+    response = analyze(prompt, slice_data)
+    parsed = parse_ai_json(response)
+    if "issues" not in parsed:
+        return {"issues": [], "summary": "Storage analysis failed to parse."}
+    return parsed
+
+def analyze_security(snapshot: dict) -> dict:
+    slice_data = slice_security(snapshot)
+    prompt = """You are analyzing the security posture of a Kubernetes cluster.
+Services exposed as NodePort or LoadBalancer are warnings or critical
+depending on what they expose. Pods with no CPU or memory limits are
+warnings as they can be exploited for resource exhaustion.
+Flag every NodePort service as critical.
+Flag every pod missing resource limits as warning.
+
+Respond ONLY in this JSON format, no other text:
+{
+  "issues": [
+    {
+      "severity": "critical" | "warning" | "info",
+      "title": "short title under 10 words",
+      "description": "one sentence explanation",
+      "affected_resource": "exact pod/deployment/service/pvc name"
+    }
+  ],
+  "summary": "one sentence overall summary of this category"
+}"""
+    response = analyze(prompt, slice_data)
+    parsed = parse_ai_json(response)
+    if "issues" not in parsed:
+        return {"issues": [], "summary": "Security analysis failed to parse."}
+    return parsed
+
+# ═══════════════════════════════════════
+# SECTION 3 — PROACTIVE HEALTH CHECK
+# ═══════════════════════════════════════
+
+def proactive_health_check(snapshot: dict) -> dict:
+    cost_res = analyze_cost(snapshot)
+    reliability_res = analyze_reliability(snapshot)
+    performance_res = analyze_performance(snapshot)
+    storage_res = analyze_storage(snapshot)
+    security_res = analyze_security(snapshot)
+
+    all_issues = []
+    
+    for category, res in [
+        ("cost", cost_res),
+        ("reliability", reliability_res),
+        ("performance", performance_res),
+        ("storage", storage_res),
+        ("security", security_res)
+    ]:
+        for issue in res.get("issues", []):
+            issue["category"] = category
+            all_issues.append(issue)
+
+    # Deduplicate by affected_resource + title combination
+    seen = set()
+    deduped_issues = []
+    for issue in all_issues:
+        key = (issue.get("affected_resource"), issue.get("title"))
+        if key not in seen:
+            seen.add(key)
+            deduped_issues.append(issue)
+            
+    # Rank by severity
+    SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
+    deduped_issues.sort(key=lambda x: SEVERITY_ORDER.get(x.get("severity", "info"), 2))
+
+    top_issues = deduped_issues[:10]
+
+    critical_count = sum(1 for x in deduped_issues if x.get("severity") == "critical")
+    warning_count = sum(1 for x in deduped_issues if x.get("severity") == "warning")
+    info_count = sum(1 for x in deduped_issues if x.get("severity") == "info")
+
+    return {
+        "top_issues": top_issues,
+        "category_summaries": {
+            "cost": cost_res.get("summary", ""),
+            "reliability": reliability_res.get("summary", ""),
+            "performance": performance_res.get("summary", ""),
+            "storage": storage_res.get("summary", ""),
+            "security": security_res.get("summary", "")
+        },
+        "critical_count": critical_count,
+        "warning_count": warning_count,
+        "info_count": info_count
+    }
+
+# ═══════════════════════════════════════
+# VERIFICATION
+# ═══════════════════════════════════════
+
+if __name__ == "__main__":
+    from snapshot import snapshot
+    from cost import enrich_with_cost
+    from sanitize import sanitize
+
+    print("Building snapshot...")
+    clean = sanitize(enrich_with_cost(snapshot()))
+    print(f"Snapshot ready — {len(clean['pods'])} pods\n")
+
+    print("Running proactive health check...")
+    result = proactive_health_check(clean)
+
+    print(f"\nCRITICAL: {result['critical_count']}")
+    print(f"WARNING:  {result['warning_count']}")
+    print(f"INFO:     {result['info_count']}")
+
+    print("\nTOP ISSUES:")
+    for i, issue in enumerate(result["top_issues"], 1):
+        print(f"{i}. [{issue.get('severity', 'info').upper()}] "
+              f"[{issue.get('category', 'unknown')}] "
+              f"{issue.get('title', 'Unknown')} — {issue.get('affected_resource', 'Unknown')}")
+
+    print("\nCATEGORY SUMMARIES:")
+    for cat, summary in result["category_summaries"].items():
+        print(f"{cat.upper()}: {summary}")
