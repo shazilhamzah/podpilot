@@ -5,7 +5,7 @@ from groq import Groq
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 # Configure Groq Client
 api_key = os.getenv("GROQ_API_KEY")
@@ -66,7 +66,7 @@ def analyze_all_categories(snapshot: dict) -> dict:
                         "content": prompt,
                     }
                 ],
-                model="llama-3.3-70b-versatile",
+                model=os.getenv("MODEL"),
                 temperature=0.2,
                 max_tokens=2048,
                 response_format={"type": "json_object"},

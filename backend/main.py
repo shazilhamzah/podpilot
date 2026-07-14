@@ -19,8 +19,15 @@ from health import (
     analyze_security
 )
 from trivy import scan_all_images, trivy_ai_summary, trivy_to_issues
+from drift_detection import (
+    save_snapshot,
+    load_last_two_snapshots,
+    diff_snapshots,
+    summarize_diff,
+    explain_drift
+)
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = FastAPI(title="PodPilot API", version="1.0.0")
 
@@ -176,17 +183,29 @@ async def trivy_scan():
 @app.get("/drift")
 async def drift():
     try:
-        # PHASE 6 HOOK — replace stub below with drift detection logic
-        # diff_summary = diff_snapshots(snapshot_old, snapshot_new)
-        # ai_analysis = analyze(diff_summary, {})
-        # return {"diff_summary": diff_summary, "ai_analysis": ai_analysis}
+        snap = get_cached_snapshot()
+        save_snapshot(snap)
         
+        older, newer = load_last_two_snapshots()
+        if older is None:
+            return {
+                "status": "first_snapshot",
+                "message": "First snapshot taken, nothing to compare yet.",
+                "diff_summary": None,
+                "ai_analysis": None,
+                "changes_detected": 0
+            }
+
+        changes = diff_snapshots(older, newer)
+        diff_summary = summarize_diff(changes)
+        ai_explanation = explain_drift(diff_summary)
+
         return {
-            "status": "not_implemented",
-            "message": "Drift detection coming in Phase 6.",
-            "diff_summary": None,
-            "ai_analysis": None,
-            "changes": []
+            "status": "success",
+            "message": "Compared current snapshot with previous.",
+            "diff_summary": diff_summary,
+            "ai_analysis": ai_explanation,
+            "changes_detected": len(changes)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/drift"})

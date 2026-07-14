@@ -1,0 +1,94 @@
+PODPILOT SECURITY ACCURACY TEST — GROUND TRUTH
+===============================================
+Namespace: podpilot-demo
+Created:   2026-07-14
+
+This file documents the ACTUAL problems seeded into the cluster.
+It is used to verify whether the AI analysis correctly identifies
+issues without being given any hints from resource names.
+
+All service names are intentionally generic and non-descriptive.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SERVICES
+--------
+
+1. frontend-web  (TYPE: NodePort)
+   PROBLEM:  NodePort exposes the service directly on every node's IP
+             at a fixed port (32001). In a production cluster this
+             bypasses the load balancer / ingress and opens a public
+             attack surface on all node IPs. Should be ClusterIP with
+             traffic routed through an Ingress controller instead.
+   SEVERITY: HIGH / Security
+
+2. user-api  (TYPE: ClusterIP)
+   PROBLEM:  Service has NO selector defined. Any traffic sent to
+             this service goes nowhere — no pods are selected, so
+             Kubernetes creates no Endpoints object. This is a silent
+             black hole: deployments will believe they can reach
+             user-api but every request will time out.
+   SEVERITY: HIGH / Reliability
+
+3. analytics-backend  (TYPE: ClusterIP)
+   PROBLEM:  Port mismatch. Service forwards to targetPort 9201, but
+             the backing pods (unpinned-image deployment) do not
+             listen on 9201. All connections will be refused. The
+             service has a valid selector but the wrong targetPort.
+   SEVERITY: HIGH / Reliability
+
+4. payment-service  (TYPE: ClusterIP)
+   PROBLEM:  None — this is a HEALTHY control service.
+             ClusterIP, correct selector (app=no-limits), port 443
+             → targetPort 8443. AI should NOT flag this as an issue.
+   SEVERITY: NONE (control)
+
+5. media-processor  (TYPE: LoadBalancer)
+   PROBLEM:  LoadBalancer type in a bare-metal / Minikube cluster that
+             has no cloud load balancer integration. EXTERNAL-IP stays
+             <pending> indefinitely, meaning the service is never
+             actually reachable from outside. Operators often forget
+             to install MetalLB or similar; the service silently
+             never works.
+   SEVERITY: MEDIUM / Reliability
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXISTING WORKLOAD ISSUES (from original seed)
+---------------------------------------------
+
+6. crash-loop-pod
+   PROBLEM:  ImagePullBackOff — image cannot be pulled. Pod never starts.
+   SEVERITY: CRITICAL / Reliability
+
+7. oversized-deployment (5 replicas desired, 2 running)
+   PROBLEM:  Requesting far more CPU/memory than available. 3 of 5 pods
+             are stuck in Pending because no node has enough capacity.
+             Classic resource over-provisioning problem.
+   SEVERITY: HIGH / Cost + Performance
+
+8. no-limits-deployment
+   PROBLEM:  No CPU or memory limits set. A single runaway container
+             could starve other workloads on the same node.
+   SEVERITY: MEDIUM / Reliability + Security
+
+9. unpinned-image-deployment
+   PROBLEM:  Uses a mutable image tag (latest or similar). Deployments
+             are not reproducible; a future pull may get a broken image.
+   SEVERITY: MEDIUM / Reliability
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ACCURACY CHECKLIST
+------------------
+AI SHOULD detect:
+  [ ] frontend-web    → NodePort exposure risk
+  [ ] user-api        → No selector / no endpoints (black hole)
+  [ ] analytics-backend → Port mismatch / unreachable backend
+  [ ] media-processor → LoadBalancer pending (no external IP)
+  [ ] crash-loop-pod  → ImagePullBackOff
+  [ ] oversized-deployment → Pending pods / resource exhaustion
+  [ ] no-limits-deployment → Missing resource limits
+  [ ] unpinned-image-deployment → Unpinned image tag
+
+AI SHOULD NOT flag:
+  [ ] payment-service → Healthy control; should be clean

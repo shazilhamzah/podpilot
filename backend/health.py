@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from analyzer import client
 
@@ -9,7 +10,7 @@ def analyze(prompt: str, slice_data: dict) -> str:
     
     chat_completion = client.chat.completions.create(
         messages=[{"role": "user", "content": full_prompt}],
-        model="llama-3.3-70b-versatile",
+        model=os.getenv("MODEL"),
         temperature=0.2,
         max_tokens=2048,
     )

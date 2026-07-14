@@ -1,5 +1,6 @@
 *venv
 *.env
-shazil/kubectl
-shazil/minikube-linux-amd64
+backend/kubectl
+backend/minikube-linux-amd64
+backend/get-docker.sh
 .gitignore
