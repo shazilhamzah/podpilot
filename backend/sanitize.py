@@ -53,7 +53,8 @@ def sanitize(snapshot: dict) -> dict:
             "has_mem_limit": bool(pod.get("has_mem_limit") or False),
             "cost_per_hour": float(pod.get("cost_per_hour") or 0.0),
             "wasted_cost_per_hour": float(pod.get("wasted_cost_per_hour") or 0.0),
-            "wasted_cost_per_month": float(pod.get("wasted_cost_per_month") or 0.0)
+            "wasted_cost_per_month": float(pod.get("wasted_cost_per_month") or 0.0),
+            "images": pod.get("images", [])
         })
         
     # Deployments

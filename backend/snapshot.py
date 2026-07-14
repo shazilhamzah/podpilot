@@ -193,9 +193,13 @@ def snapshot():
             mem_req = 0.0
             has_cpu_limit = False
             has_mem_limit = False
+            images = []
             
             if pod.spec.containers:
                 for container in pod.spec.containers:
+                    if container.image and container.image not in images:
+                        images.append(container.image)
+                    
                     if container.resources:
                         requests = container.resources.requests or {}
                         limits = container.resources.limits or {}
@@ -220,7 +224,8 @@ def snapshot():
                 "cpu_actual": p_metrics['cpu'],
                 "mem_actual_gb": p_metrics['mem'],
                 "has_cpu_limit": has_cpu_limit,
-                "has_mem_limit": has_mem_limit
+                "has_mem_limit": has_mem_limit,
+                "images": images
             })
     except Exception:
         pass

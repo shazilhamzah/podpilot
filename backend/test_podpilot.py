@@ -530,10 +530,10 @@ class TestTrivyHelpers(unittest.TestCase):
         images = self.get_unique_images(snap)
         self.assertEqual(len(images), 2)
 
-    def test_get_unique_images_fallback_when_no_image_field(self):
+    def test_get_unique_images_empty_when_no_images(self):
         snap = {"pods": [{"name": "p", "namespace": "default", "status": "Running"}]}
         images = self.get_unique_images(snap)
-        self.assertGreater(len(images), 0)
+        self.assertEqual(len(images), 0)
 
     def test_trivy_to_issues_critical_severity(self):
         scan_results = {"images": [

@@ -6,15 +6,14 @@ from health import analyze
 def get_unique_images(snapshot: dict) -> list[str]:
     images = set()
     for pod in snapshot.get("pods", []):
-        if "image" in pod and pod["image"]:
+        # Handle the new 'images' list we added to snapshot.py
+        if "images" in pod and pod["images"]:
+            for img in pod["images"]:
+                images.add(img)
+        # Fallback for older snapshots that might have used a single string
+        elif "image" in pod and pod["image"]:
             images.add(pod["image"])
     
-    if not images:
-        images = set([
-            "nginx:1.25",
-            "redis:latest",
-            "registry.k8s.io/metrics-server/metrics-server:v0.7.2"
-        ])
     return list(images)
 
 def scan_image(image: str) -> dict:
