@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Server, Send, Sparkles } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import PodPilotLogo from "./PodPilotLogo";
 
 // Canned responses so the page feels alive without a backend wired up yet.
 // Swap sendToBackend() for a real API call when ready.
@@ -36,11 +39,7 @@ function getMockReply(text) {
 }
 
 function AssistantAvatar() {
-  return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#171C2A] text-[#4f6df5] shadow-[0_0_0_1px_rgba(79,109,245,0.35),0_4px_14px_rgba(79,109,245,0.2)]">
-      <Server size={15} />
-    </span>
-  );
+  return <PodPilotLogo size={32} />;
 }
 
 function ChatBubble({ role, content }) {
@@ -49,13 +48,18 @@ function ChatBubble({ role, content }) {
     <div className={`flex items-start gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && <AssistantAvatar />}
       <div
-        className={`max-w-[70%] rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed ${
-          isUser
-            ? "rounded-tr-sm bg-[#4f6df5] text-white"
-            : "rounded-tl-sm border border-[#1c1f2f] bg-[#171c2a] text-[#e7e9ee]"
-        }`}
+        className={`max-w-[70%] rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed ${isUser
+          ? "rounded-tr-sm bg-[#4f6df5] text-white"
+          : "rounded-tl-sm border border-[#1c1f2f] bg-[#171c2a] text-[#e7e9ee]"
+          }`}
       >
-        {content}
+        {isUser ? (
+          content
+        ) : (
+          <div className="markdown-body">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -78,7 +82,7 @@ function TypingBubble() {
   );
 }
 
-export default function Chat() {
+export default function Chat({ selectedSnapshotId }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -88,6 +92,7 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -106,10 +111,15 @@ export default function Chat() {
 
     try {
       const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+      const payload = { question: trimmed };
+      if (selectedSnapshotId) {
+        payload.snapshot_id = selectedSnapshotId;
+      }
+
       const response = await fetch(`${backendUrl}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
+        body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error("Failed to fetch response");
       const data = await response.json();
@@ -142,6 +152,23 @@ export default function Chat() {
   }
 
   const showStarters = messages.length === 1;
+
+  if (!selectedSnapshotId) {
+    return (
+      <div className="flex h-full flex-1 flex-col items-center justify-center bg-[#0d0f18]">
+        <div className="flex items-center gap-2 text-[#4f6df5] mb-4">
+          <div className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms" }}></div>
+          <div className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms" }}></div>
+          <div className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms" }}></div>
+        </div>
+        <p className="text-[#9099ab] text-sm animate-pulse max-w-sm text-center leading-relaxed">
+          <span>Processing snapshot data and running AI analysis...</span>
+          <br /><br />
+          <span className="text-[12px] opacity-80">(Note: generating a new snapshot might take a few minutes)</span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col bg-[#0d0f18]">

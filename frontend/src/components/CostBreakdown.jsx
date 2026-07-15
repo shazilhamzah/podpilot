@@ -403,15 +403,17 @@ function NamespaceGroup({ group, totalClusterCost }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-export default function CostBreakdown() {
+export default function CostBreakdown({ selectedSnapshotId }) {
   const [snap, setSnap] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchSnapshot = async () => {
+      setSnap(null);
       try {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
-        const response = await fetch(`${backendUrl}/snapshot`);
+        const query = selectedSnapshotId ? `?snapshot_id=${selectedSnapshotId}` : '';
+        const response = await fetch(`${backendUrl}/snapshot${query}`);
         if (!response.ok) throw new Error("Failed to fetch snapshot");
         const data = await response.json();
         setSnap(data.data);
@@ -420,7 +422,7 @@ export default function CostBreakdown() {
       }
     };
     fetchSnapshot();
-  }, []);
+  }, [selectedSnapshotId]);
 
   if (error) return (
     <div className="flex flex-1 min-h-0 items-center justify-center bg-[#0d0f18]">

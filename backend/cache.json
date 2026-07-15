@@ -1,19 +1,19 @@
 {
   "snapshot": {
-    "captured_at": "2026-07-15T08:15:00.579915Z",
+    "captured_at": "2026-07-15T09:13:07.094978Z",
     "cluster_name": "minikube",
     "cost_summary": {
       "total_cost_per_hour": 0.101128,
-      "total_wasted_per_hour": 0.092576,
-      "total_wasted_per_month": 67.581139
+      "total_wasted_per_hour": 0.092515,
+      "total_wasted_per_month": 67.537634
     },
     "nodes": [
       {
         "name": "minikube",
         "cpu_capacity": 2.0,
         "mem_capacity_gb": 7.702411651611328,
-        "cpu_usage": 0.198531076,
-        "mem_usage_gb": 1.1828041076660156
+        "cpu_usage": 0.200561517,
+        "mem_usage_gb": 1.1849517822265625
       }
     ],
     "pods": [
@@ -62,13 +62,13 @@
         "restart_count": 3,
         "cpu_requested": 0.1,
         "mem_requested_gb": 0.068359375,
-        "cpu_actual": 0.001090096,
-        "mem_actual_gb": 0.08467864990234375,
+        "cpu_actual": 0.001123254,
+        "mem_actual_gb": 0.0847320556640625,
         "has_cpu_limit": false,
         "has_mem_limit": true,
         "cost_per_hour": 0.002791,
-        "wasted_cost_per_hour": 0.001888,
-        "wasted_cost_per_month": 1.377952,
+        "wasted_cost_per_hour": 0.001886,
+        "wasted_cost_per_month": 1.377043,
         "images": [
           "registry.k8s.io/coredns/coredns:v1.13.1"
         ],
@@ -81,13 +81,13 @@
         "restart_count": 3,
         "cpu_requested": 0.1,
         "mem_requested_gb": 0.09765625,
-        "cpu_actual": 0.012984468,
-        "mem_actual_gb": 0.1009063720703125,
+        "cpu_actual": 0.013080544,
+        "mem_actual_gb": 0.104156494140625,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.003096,
-        "wasted_cost_per_hour": 0.001776,
-        "wasted_cost_per_month": 1.296569,
+        "wasted_cost_per_hour": 0.00174,
+        "wasted_cost_per_month": 1.270435,
         "images": [
           "registry.k8s.io/etcd:3.6.6-0"
         ],
@@ -100,13 +100,13 @@
         "restart_count": 3,
         "cpu_requested": 0.25,
         "mem_requested_gb": 0.0,
-        "cpu_actual": 0.023902824,
-        "mem_actual_gb": 0.2835578918457031,
+        "cpu_actual": 0.024365379,
+        "mem_actual_gb": 0.2840385437011719,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.0052,
-        "wasted_cost_per_hour": 0.001754,
-        "wasted_cost_per_month": 1.280288,
+        "wasted_cost_per_hour": 0.001739,
+        "wasted_cost_per_month": 1.269615,
         "images": [
           "registry.k8s.io/kube-apiserver:v1.35.1"
         ],
@@ -119,13 +119,13 @@
         "restart_count": 4,
         "cpu_requested": 0.2,
         "mem_requested_gb": 0.0,
-        "cpu_actual": 0.008997333,
-        "mem_actual_gb": 0.1263885498046875,
+        "cpu_actual": 0.009097336,
+        "mem_actual_gb": 0.126220703125,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.00416,
         "wasted_cost_per_hour": 0.002658,
-        "wasted_cost_per_month": 1.940643,
+        "wasted_cost_per_month": 1.940398,
         "images": [
           "registry.k8s.io/kube-controller-manager:v1.35.1"
         ],
@@ -138,8 +138,8 @@
         "restart_count": 3,
         "cpu_requested": 0.0,
         "mem_requested_gb": 0.0,
-        "cpu_actual": 0.000342766,
-        "mem_actual_gb": 0.06269073486328125,
+        "cpu_actual": 0.000217694,
+        "mem_actual_gb": 0.06270980834960938,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.0,
@@ -157,13 +157,13 @@
         "restart_count": 3,
         "cpu_requested": 0.1,
         "mem_requested_gb": 0.0,
-        "cpu_actual": 0.006310944,
-        "mem_actual_gb": 0.06726837158203125,
+        "cpu_actual": 0.006515488,
+        "mem_actual_gb": 0.06731033325195312,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.00208,
-        "wasted_cost_per_hour": 0.001249,
-        "wasted_cost_per_month": 0.911873,
+        "wasted_cost_per_hour": 0.001244,
+        "wasted_cost_per_month": 0.908449,
         "images": [
           "registry.k8s.io/kube-scheduler:v1.35.1"
         ],
@@ -176,13 +176,13 @@
         "restart_count": 5,
         "cpu_requested": 0.1,
         "mem_requested_gb": 0.1953125,
-        "cpu_actual": 0.002011283,
-        "mem_actual_gb": 0.03087615966796875,
+        "cpu_actual": 0.002110905,
+        "mem_actual_gb": 0.030956268310546875,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.004111,
-        "wasted_cost_per_hour": 0.003748,
-        "wasted_cost_per_month": 2.736261,
+        "wasted_cost_per_hour": 0.003745,
+        "wasted_cost_per_month": 2.734141,
         "images": [
           "registry.k8s.io/metrics-server/metrics-server:v0.8.1@sha256:b2d2efaf5ac3b366ed0f839d2412a2c4279d4fc2a2a733f12c52133faed36c41"
         ],
@@ -195,8 +195,8 @@
         "restart_count": 8,
         "cpu_requested": 0.0,
         "mem_requested_gb": 0.0,
-        "cpu_actual": 0.001260642,
-        "mem_actual_gb": 0.024707794189453125,
+        "cpu_actual": 0.001071793,
+        "mem_actual_gb": 0.025699615478515625,
         "has_cpu_limit": false,
         "has_mem_limit": false,
         "cost_per_hour": 0.0,
@@ -472,6 +472,91 @@
       }
     ]
   },
-  "last_updated": 1784103300.5647762,
-  "analysis_results": {}
+  "last_updated": 1784106787.088181,
+  "analysis_results": {
+    "health": {
+      "top_issues": [
+        {
+          "severity": "critical",
+          "title": "Oversized Deployment",
+          "description": "Pod is wasting over $20/month due to oversized resources",
+          "affected_resource": "oversized-deployment-998dc6964-9s8gm",
+          "category": "cost"
+        },
+        {
+          "severity": "critical",
+          "title": "Oversized Deployment",
+          "description": "Pod is wasting over $20/month due to oversized resources",
+          "affected_resource": "oversized-deployment-998dc6964-bt2kg",
+          "category": "cost"
+        },
+        {
+          "severity": "critical",
+          "title": "Oversized Deployment",
+          "description": "Pod is wasting over $20/month due to oversized resources",
+          "affected_resource": "oversized-deployment-998dc6964-cvks8",
+          "category": "cost"
+        },
+        {
+          "severity": "critical",
+          "title": "Oversized Deployment",
+          "description": "Pod is wasting over $20/month due to oversized resources",
+          "affected_resource": "oversized-deployment-998dc6964-gtnkn",
+          "category": "cost"
+        },
+        {
+          "severity": "critical",
+          "title": "Oversized Deployment",
+          "description": "Pod is wasting over $20/month due to oversized resources",
+          "affected_resource": "oversized-deployment-998dc6964-zxzvt",
+          "category": "cost"
+        },
+        {
+          "severity": "critical",
+          "title": "CrashLoopBackOff",
+          "description": "Pod is in CrashLoopBackOff status",
+          "affected_resource": "crash-loop-pod",
+          "category": "reliability"
+        },
+        {
+          "severity": "critical",
+          "title": "Unschedulable Pods",
+          "description": "Multiple pods are in Pending state and cannot be scheduled",
+          "affected_resource": "crash-loop-pod, oversized-deployment-998dc6964-bt2kg, oversized-deployment-998dc6964-cvks8, oversized-deployment-998dc6964-gtnkn",
+          "category": "performance"
+        },
+        {
+          "severity": "critical",
+          "title": "NodePort Service",
+          "description": "The frontend-web service is exposed as a NodePort",
+          "affected_resource": "frontend-web",
+          "category": "security"
+        },
+        {
+          "severity": "warning",
+          "title": "Unused PVC",
+          "description": "PVC is bound but not being used",
+          "affected_resource": "orphan-pvc",
+          "category": "cost"
+        },
+        {
+          "severity": "warning",
+          "title": "Missing Limits",
+          "description": "Pod is missing CPU and memory limits",
+          "affected_resource": "kube-controller-manager-minikube",
+          "category": "reliability"
+        }
+      ],
+      "category_summaries": {
+        "cost": "Multiple pods are wasting over $20/month and one PVC is unused",
+        "reliability": "Cluster has critical and warning issues with pods and deployments.",
+        "performance": "Multiple pods are unschedulable and no high CPU utilization detected",
+        "storage": "One potentially orphaned PVC found in the cluster",
+        "security": "Multiple pods are missing resource limits and a NodePort service is exposed."
+      },
+      "critical_count": 8,
+      "warning_count": 22,
+      "info_count": 0
+    }
+  }
 }

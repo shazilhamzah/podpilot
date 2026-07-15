@@ -89,21 +89,20 @@ spec:
       storage: 1Gi
 
 ---
-# PROBLEM 5 - NODEPORT SERVICE
+# PROBLEM 5 - NODEPORT SERVICE FIXED
 apiVersion: v1
 kind: Service
 metadata:
-  name: exposed-nodeport-service
+  name: frontend-web
   namespace: podpilot-demo
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     # Targets the no-limits-deployment
     app: no-limits
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 32001
 
 ---
 # PROBLEM 6 - UNPINNED IMAGE TAG

@@ -49,37 +49,77 @@ SNAPSHOT_DIR = "snapshots"
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 
+from db import db
+
 # ---------------------------------------------------------------------------
-# Step 1: save a timestamped sanitized snapshot to disk
+# Step 1: save a timestamped sanitized snapshot to database
 # ---------------------------------------------------------------------------
 
-def save_snapshot(sanitized: dict) -> str:
-    """Writes a sanitized snapshot to disk with a timestamped filename.
-    Returns the filepath written."""
-    os.makedirs(SNAPSHOT_DIR, exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    filepath = os.path.join(SNAPSHOT_DIR, f"snapshot_{ts}.json")
-    with open(filepath, "w") as f:
-        json.dump(sanitized, f)
-    return filepath
+async def save_snapshot(sanitized: dict, name: str = None, comments: str = None) -> str:
+    """Writes a sanitized snapshot to MongoDB with a timestamp, name, and comments.
+    Returns the ObjectId string."""
+    if db is None:
+        print("[WARNING] Database not connected. Snapshot not saved.")
+        return ""
+        
+    ts = datetime.now(timezone.utc).isoformat()
+    if not name:
+        name = f"snapshot_{int(time.time())}"
+    if comments is None:
+        comments = ""
+        
+    doc = {
+        "captured_at": ts,
+        "name": name,
+        "comments": comments,
+        "snapshot": sanitized
+    }
+    result = await db.snapshots.insert_one(doc)
+    return str(result.inserted_id)
 
 
-def load_last_two_snapshots():
+async def load_last_two_snapshots():
     """Returns (older, newer) sanitized dicts. Returns (None, latest) if
     only one snapshot exists yet, or (None, None) if there are none."""
-    if not os.path.isdir(SNAPSHOT_DIR):
+    if db is None:
         return None, None
-    files = sorted(os.listdir(SNAPSHOT_DIR))  # timestamped names sort chronologically
-    if len(files) == 0:
+        
+    cursor = db.snapshots.find().sort("captured_at", -1).limit(2)
+    docs = await cursor.to_list(length=2)
+    
+    if len(docs) == 0:
         return None, None
-    if len(files) == 1:
-        with open(os.path.join(SNAPSHOT_DIR, files[-1])) as f:
-            return None, json.load(f)
-    with open(os.path.join(SNAPSHOT_DIR, files[-2])) as f:
-        older = json.load(f)
-    with open(os.path.join(SNAPSHOT_DIR, files[-1])) as f:
-        newer = json.load(f)
-    return older, newer
+    elif len(docs) == 1:
+        return None, docs[0]["snapshot"]
+    else:
+        # docs is sorted newest first, so docs[1] is older, docs[0] is newer
+        return docs[1]["snapshot"], docs[0]["snapshot"]
+
+async def load_target_and_previous_snapshot(snapshot_id: str):
+    """Returns (older, newer) sanitized dicts for a specific target snapshot.
+    If target is the first snapshot, older will be None."""
+    from bson.objectid import ObjectId
+    if db is None:
+        return None, None
+        
+    if snapshot_id == "latest":
+        return await load_last_two_snapshots()
+        
+    try:
+        target_doc = await db.snapshots.find_one({"_id": ObjectId(snapshot_id)})
+        if not target_doc:
+            return None, None
+            
+        target_time = target_doc.get("captured_at")
+        cursor = db.snapshots.find({"captured_at": {"$lt": target_time}}).sort("captured_at", -1).limit(1)
+        prev_docs = await cursor.to_list(length=1)
+        
+        older = prev_docs[0]["snapshot"] if prev_docs else None
+        newer = target_doc["snapshot"]
+        
+        return older, newer
+    except Exception:
+        return None, None
 
 
 # ---------------------------------------------------------------------------

@@ -1,15 +1,7 @@
 import { AlertCircle, AlertTriangle, Info, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const CATEGORIES = ["Cost", "Reliability", "Performance", "Storage", "Security"];
 
-const CATEGORY_ICONS = {
-  Cost: "💰",
-  Reliability: "🔄",
-  Performance: "⚡",
-  Storage: "💾",
-  Security: "🛡️",
-};
 
 const SEVERITY_CONFIG = {
   critical: {
@@ -58,30 +50,7 @@ function StatCard({ label, value, tone }) {
   );
 }
 
-function CategoryPill({ label, active, count, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-all ${
-        active
-          ? "bg-[#4f6df5] text-white shadow-[0_0_12px_rgba(79,109,245,0.35)]"
-          : "bg-[#171C2A] text-[#9099ab] border border-[#1c1f2f] hover:text-[#e7e9ee] hover:border-[#2a2f45]"
-      }`}
-    >
-      <span>{CATEGORY_ICONS[label]}</span>
-      {label}
-      {count > 0 && (
-        <span
-          className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-            active ? "bg-white/20 text-white" : "bg-[#ff6b6b]/20 text-[#ff6b6b]"
-          }`}
-        >
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
+
 
 function AlertCard({ severity, title, detail }) {
   const cfg = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.info;
@@ -108,20 +77,29 @@ function LoadingPulse() {
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ selectedSnapshotId, activeTab }) {
   const [snapshot, setSnapshot] = useState(null);
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("Cost");
+
+  useEffect(() => {
+    if (activeTab === "Chat") {
+      setIsOpen(true);
+    } else if (activeTab) {
+      setIsOpen(false);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const fetchSidebarData = async () => {
+      setLoading(true);
       try {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+        const query = selectedSnapshotId ? `?snapshot_id=${selectedSnapshotId}` : '';
         const [snapRes, healthRes] = await Promise.all([
-          fetch(`${backendUrl}/snapshot`),
-          fetch(`${backendUrl}/health`)
+          fetch(`${backendUrl}/snapshot${query}`),
+          fetch(`${backendUrl}/health${query}`)
         ]);
         if (snapRes.ok) setSnapshot(await snapRes.json());
         if (healthRes.ok) setHealth(await healthRes.json());
@@ -134,10 +112,11 @@ export default function Sidebar() {
     fetchSidebarData();
     const interval = setInterval(fetchSidebarData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedSnapshotId]);
 
   const snapData = snapshot?.data || {};
   const totalPods = (snapData.pods || []).length;
+  const totalNodes = (snapData.nodes || []).length;
 
   const costSummary = snapData.cost_summary || {};
   const estimatedCost = (costSummary.total_cost_per_hour || 0) * 730;
@@ -145,23 +124,14 @@ export default function Sidebar() {
 
   const allAlerts = health?.top_issues || [];
   const criticalIssuesCount = allAlerts.filter(a => a.severity === "critical").length;
-  const categorySummaries = health?.category_summaries || {};
-
-  // Count issues per category for badge display
-  const countByCategory = (cat) =>
-    allAlerts.filter(a => a.category === cat.toLowerCase()).length;
-
-  // Filtered alerts for the active category
-  const filteredAlerts = activeCategory
-    ? allAlerts.filter(a => a.category === activeCategory.toLowerCase())
-    : allAlerts;
-
-  const activeSummary = categorySummaries[activeCategory.toLowerCase()];
+  
+  const top5Alerts = allAlerts.slice(0, 5);
 
   const fmt$ = (val) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val);
 
   const CLUSTER_STATS = [
+    { label: "Total Nodes", value: totalNodes.toString(), tone: "neutral" },
     { label: "Total Pods", value: totalPods.toString(), tone: "neutral" },
     { label: "Estimated Monthly Cost", value: fmt$(estimatedCost), tone: "neutral" },
     { label: "Wasted Cost", value: fmt$(wastedCost), tone: wastedCost > 0 ? "warning" : "neutral" },
@@ -210,56 +180,27 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Analysis Categories */}
-      <div>
-        <p className="m-0 text-[12px] font-semibold tracking-wide text-[#9099ab]">ANALYSIS CATEGORIES</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {CATEGORIES.map((label) => (
-            <CategoryPill
-              key={label}
-              label={label}
-              active={label === activeCategory}
-              count={countByCategory(label)}
-              onClick={() => setActiveCategory(label)}
-            />
-          ))}
-        </div>
-
-        {/* Category summary blurb */}
-        {activeSummary && (
-          <div className="mt-3 rounded-xl border border-[#1c1f2f] bg-[#171c2a] px-4 py-3">
-            <p className="m-0 text-[12px] text-[#9099ab]">
-              {CATEGORY_ICONS[activeCategory]}{" "}
-              <span className="font-semibold text-[#e7e9ee]">{activeCategory}</span>
-            </p>
-            <p className="m-0 mt-1.5 text-[12.5px] leading-relaxed text-[#9099ab]">
-              {activeSummary}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Proactive Alerts filtered by category */}
+      {/* Top 5 Issues */}
       <div>
         <div className="flex items-center justify-between">
           <p className="m-0 text-[12px] font-semibold tracking-wide text-[#9099ab]">
-            {activeCategory.toUpperCase()} ALERTS
+            TOP ISSUES
           </p>
-          {filteredAlerts.length > 0 && (
+          {top5Alerts.length > 0 && (
             <span className="text-[11px] text-[#9099ab]">
-              {filteredAlerts.filter(a => a.severity === "critical").length} critical
+              {top5Alerts.filter(a => a.severity === "critical").length} critical
             </span>
           )}
         </div>
         <div className="mt-3 flex flex-col gap-3">
           {loading ? (
             <LoadingPulse />
-          ) : filteredAlerts.length === 0 ? (
+          ) : top5Alerts.length === 0 ? (
             <div className="rounded-xl border border-[#1c1f2f] bg-[#171c2a] px-4 py-5 text-center">
-              <p className="m-0 text-[13px] text-[#50e3c2]">✓ No {activeCategory} issues detected</p>
+              <p className="m-0 text-[13px] text-[#50e3c2]">✓ No issues detected</p>
             </div>
           ) : (
-            filteredAlerts.map((alert, idx) => (
+            top5Alerts.map((alert, idx) => (
               <AlertCard
                 key={idx}
                 severity={alert.severity}

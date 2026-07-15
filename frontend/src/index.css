@@ -27,3 +27,56 @@
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+.markdown-body p {
+  margin: 0 0 0.5em 0;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body strong {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.4em 0;
+  padding-left: 1.3em;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
+}
+
+.markdown-body li {
+  margin-bottom: 0.3em;
+}
+
+.markdown-body li>p {
+  margin: 0;
+  display: inline;
+}
+
+.markdown-body code {
+  background: rgba(148, 163, 184, 0.15);
+  color: #93c5fd;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: ui-monospace, monospace;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  font-weight: 600;
+  margin: 0.6em 0 0.3em 0;
+  color: #f1f5f9;
+}

@@ -33,7 +33,15 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
     if not any([wants_nodes, wants_cost, wants_security, wants_storage, wants_deploy, wants_pods]):
         wants_pods = True
 
-    slice_data = {}
+    slice_data = {
+        "metadata": {
+            "total_pods": len(snapshot.get("pods", [])),
+            "total_nodes": len(snapshot.get("nodes", [])),
+            "total_deployments": len(snapshot.get("deployments", [])),
+            "total_services": len(snapshot.get("services", [])),
+            "total_pvcs": len(snapshot.get("pvcs", [])),
+        }
+    }
 
     if wants_cost:
         slice_data["cost_summary"] = snapshot.get("cost_summary", {})
@@ -102,6 +110,29 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
     return chat_completion.choices[0].message.content
 
 
+def get_security_solution(title: str, description: str, remediation: str, resources: list) -> str:
+    system_prompt = (
+        "You are an expert Kubernetes security engineer. "
+        "Provide a short, actionable solution, specifically a kubectl command or YAML snippet if applicable, "
+        "to fix the following Kubernetes security issue. Do not include unnecessary explanations."
+    )
+    full_prompt = (
+        f"Title: {title}\n"
+        f"Description: {description}\n"
+        f"Remediation: {remediation}\n"
+        f"Affected Resources: {', '.join(resources)}"
+    )
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": full_prompt}
+        ],
+        model=os.getenv("MODEL"),
+        temperature=0.2,
+        max_tokens=512,
+    )
+    return chat_completion.choices[0].message.content
 
 # ═══════════════════════════════════════
 # SECTION 1 — SLICE EXTRACTION HELPERS
