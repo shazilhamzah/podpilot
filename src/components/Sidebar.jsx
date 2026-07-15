@@ -2,6 +2,7 @@ import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 
 // Hardcoded for now — wire up to real cluster snapshot state later.
 const CLUSTER_STATS = [
+  { label: "Total Nodes", value: "3", tone: "neutral" },
   { label: "Total Pods", value: "12", tone: "neutral" },
   { label: "Estimated Monthly Cost", value: "$142.50", tone: "neutral" },
   { label: "Wasted Cost", value: "$38.20", tone: "warning" },

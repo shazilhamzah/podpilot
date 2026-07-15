@@ -384,9 +384,8 @@ function TimelineItem({ snap, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition ${
-        active ? "border-[#4f6df5]/40 bg-[#4f6df5]/10" : "border-[#1c2235] bg-[#0f1220] hover:bg-white/[0.03]"
-      }`}
+      className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition ${active ? "border-[#4f6df5]/40 bg-[#4f6df5]/10" : "border-[#1c2235] bg-[#0f1220] hover:bg-white/[0.03]"
+        }`}
     >
       {/* dot */}
       <span
@@ -463,6 +462,124 @@ function NoDrift() {
 }
 
 // ---------------------------------------------------------------------------
+// Compare Snapshots View
+// ---------------------------------------------------------------------------
+function CompareSnapshotsView({ onClose }) {
+  const [snapA, setSnapA] = useState(MOCK_TIMELINE[1].id);
+  const [snapB, setSnapB] = useState(MOCK_TIMELINE[0].id);
+  const [showResult, setShowResult] = useState(false);
+
+  const changes = parseDiffSummary(MOCK_POLL_RESULT.diff_summary);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="m-0 text-[20px] font-bold text-[#e7e9ee]">Compare Snapshots</h2>
+      </div>
+
+      {!showResult ? (
+        <div className="flex flex-col gap-6 rounded-2xl border border-[#1c2235] bg-[#0f1220] p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="mb-2 block text-[12.5px] font-semibold text-[#9099ab]">Snapshot A (Baseline)</label>
+              <select
+                value={snapA}
+                onChange={(e) => setSnapA(e.target.value)}
+                className="w-full rounded-xl border border-[#1c2235] bg-[#171c2a] px-4 py-2.5 text-[13.5px] text-[#e7e9ee] outline-none focus:border-[#4f6df5]"
+              >
+                {MOCK_TIMELINE.map(s => <option key={s.id} value={s.id}>{s.label} ({s.id})</option>)}
+              </select>
+            </div>
+            <div className="mt-6 text-[#9099ab]"><ArrowRight size={16} /></div>
+            <div className="flex-1">
+              <label className="mb-2 block text-[12.5px] font-semibold text-[#9099ab]">Snapshot B (Target)</label>
+              <select
+                value={snapB}
+                onChange={(e) => setSnapB(e.target.value)}
+                className="w-full rounded-xl border border-[#1c2235] bg-[#171c2a] px-4 py-2.5 text-[13.5px] text-[#e7e9ee] outline-none focus:border-[#4f6df5]"
+              >
+                {MOCK_TIMELINE.map(s => <option key={s.id} value={s.id}>{s.label} ({s.id})</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <button
+              onClick={onClose}
+              className="rounded-xl px-4 py-2 text-[13px] font-semibold text-[#9099ab] hover:text-[#e7e9ee]"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => setShowResult(true)}
+              className="rounded-xl bg-[#4f6df5] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#4f6df5]/90"
+            >
+              Compare
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between rounded-xl border border-[#1c2235] bg-[#0f1220] p-4">
+            <div className="text-[13.5px] text-[#e7e9ee]">
+              Comparing <strong>{snapA}</strong> to <strong>{snapB}</strong>
+            </div>
+            <button
+              onClick={() => setShowResult(false)}
+              className="rounded-xl border border-[#1c2235] bg-[#171c2a] px-3 py-1.5 text-[12px] font-semibold text-[#9099ab] hover:text-[#e7e9ee]"
+            >
+              Change Snapshots
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            {["critical", "warning", "info"].map((sev) => {
+              const group = changes.filter((c) => c.severity === sev);
+              if (!group.length) return null;
+              const sevCfg = SEV[sev];
+              return (
+                <div key={sev}>
+                  <p
+                    className="m-0 mb-3 text-[11.5px] font-semibold uppercase tracking-wider"
+                    style={{ color: sevCfg.color }}
+                  >
+                    {sevCfg.label}
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    {group.map((change, i) => (
+                      <ChangeCard key={i} change={change} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="rounded-xl border border-[#4f6df5]/20 bg-[#4f6df5]/5 p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <Sparkles size={16} className="text-[#4f6df5]" />
+              <span className="text-[14px] font-bold text-[#e7e9ee]">AI Analysis</span>
+            </div>
+            <p className="m-0 text-[13.5px] leading-relaxed text-[#e7e9ee]">
+              Comparing <strong>{snapA}</strong> to <strong>{snapB}</strong> shows a significant increase in replica count for the <code>batch-worker</code> deployment and the introduction of a new pod <code>ml-training-pod-v2</code>. Several restarts were detected on <code>worker-3</code>. Overall cluster health has degraded slightly due to the failing <code>legacy-api-74d9f</code> pod.
+            </p>
+          </div>
+
+          <div className="flex justify-start">
+            <button
+              onClick={onClose}
+              className="rounded-xl bg-[#2a2f45] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#343a55]"
+            >
+              Back to Drift Detection
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 export default function DriftDetection() {
@@ -470,6 +587,7 @@ export default function DriftDetection() {
   const [lastPolled, setLastPolled] = useState("2 mins ago");
   const [activeSnap, setActiveSnap] = useState(MOCK_TIMELINE[0].id);
   const [result] = useState(MOCK_POLL_RESULT);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   const changes = parseDiffSummary(result.diff_summary);
 
@@ -497,10 +615,32 @@ export default function DriftDetection() {
           <TimelineItem
             key={snap.id}
             snap={snap}
-            active={snap.id === activeSnap}
-            onClick={() => setActiveSnap(snap.id)}
+            active={snap.id === activeSnap && !showCompareModal}
+            onClick={() => {
+              setActiveSnap(snap.id);
+              setShowCompareModal(false);
+            }}
           />
         ))}
+
+        <div className="my-2 h-px w-full bg-[#1c2235]" />
+
+        <button
+          onClick={() => setShowCompareModal(true)}
+          className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition ${
+            showCompareModal
+              ? "border-[#4f6df5]/40 bg-[#4f6df5]/10"
+              : "border-[#1c2235] bg-[#0f1220] hover:bg-white/[0.03]"
+          }`}
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#4f6df5]/10 text-[#4f6df5]">
+            <GitCompareArrows size={14} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[12.5px] font-semibold text-[#e7e9ee]">Compare Snapshots</span>
+            <p className="m-0 mt-0.5 text-[11px] text-[#9099ab]">AI-powered diff</p>
+          </div>
+        </button>
       </div>
 
       {/* ── Main content ── */}
@@ -522,115 +662,123 @@ export default function DriftDetection() {
               </div>
 
               {/* Severity summary pills */}
-              <div className="flex shrink-0 items-center gap-2">
-                {criticalCount > 0 && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-[#ff6b6b]/10 px-3 py-1.5 text-[12px] font-bold text-[#ff6b6b]">
-                    <AlertTriangle size={12} />
-                    {criticalCount} Critical
-                  </span>
-                )}
-                {warningCount > 0 && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-3 py-1.5 text-[12px] font-bold text-[#f5a623]">
-                    {warningCount} Warning
-                  </span>
-                )}
-                {infoCount > 0 && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-[#4f6df5]/10 px-3 py-1.5 text-[12px] font-bold text-[#4f6df5]">
-                    {infoCount} Info
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Poll status bar ── */}
-          <div className="mb-6">
-            <PollStatus lastPolled={lastPolled} polling={polling} onPoll={handlePoll} />
-          </div>
-
-          {result.changes_detected === 0 ? (
-            <NoDrift />
-          ) : (
-            <div className="flex flex-col gap-6">
-
-              {/* ── Change summary header ── */}
-              <div className="flex items-center justify-between">
-                <p className="m-0 text-[12px] font-semibold uppercase tracking-wider text-[#9099ab]">
-                  {result.changes_detected} Changes Detected
-                </p>
-                {/* mini legend */}
-                <div className="flex items-center gap-3 text-[11.5px] text-[#9099ab]">
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[#ff6b6b]" /> Critical
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[#f5a623]" /> Warning
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[#4f6df5]" /> Info
-                  </span>
+              <div className="flex flex-col items-end gap-3">
+                <div className="flex shrink-0 items-center gap-2">
+                  {criticalCount > 0 && (
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#ff6b6b]/10 px-3 py-1.5 text-[12px] font-bold text-[#ff6b6b]">
+                      <AlertTriangle size={12} />
+                      {criticalCount} Critical
+                    </span>
+                  )}
+                  {warningCount > 0 && (
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-3 py-1.5 text-[12px] font-bold text-[#f5a623]">
+                      {warningCount} Warning
+                    </span>
+                  )}
+                  {infoCount > 0 && (
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#4f6df5]/10 px-3 py-1.5 text-[12px] font-bold text-[#4f6df5]">
+                      {infoCount} Info
+                    </span>
+                  )}
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* ── Change cards ── */}
-              {/* Critical first */}
-              {["critical", "warning", "info"].map((sev) => {
-                const group = changes.filter((c) => c.severity === sev);
-                if (!group.length) return null;
-                const sevCfg = SEV[sev];
-                return (
-                  <div key={sev}>
-                    <p
-                      className="m-0 mb-3 text-[11.5px] font-semibold uppercase tracking-wider"
-                      style={{ color: sevCfg.color }}
-                    >
-                      {sevCfg.label}
+          {showCompareModal ? (
+            <CompareSnapshotsView onClose={() => setShowCompareModal(false)} />
+          ) : (
+            <>
+              {/* ── Poll status bar ── */}
+              <div className="mb-6">
+                <PollStatus lastPolled={lastPolled} polling={polling} onPoll={handlePoll} />
+              </div>
+
+              {result.changes_detected === 0 ? (
+                <NoDrift />
+              ) : (
+                <div className="flex flex-col gap-6">
+
+                  {/* ── Change summary header ── */}
+                  <div className="flex items-center justify-between">
+                    <p className="m-0 text-[12px] font-semibold uppercase tracking-wider text-[#9099ab]">
+                      {result.changes_detected} Changes Detected
                     </p>
-                    <div className="flex flex-col gap-3">
-                      {group.map((change, i) => (
-                        <ChangeCard key={i} change={change} />
-                      ))}
+                    {/* mini legend */}
+                    <div className="flex items-center gap-3 text-[11.5px] text-[#9099ab]">
+                      <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-[#ff6b6b]" /> Critical
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-[#f5a623]" /> Warning
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-[#4f6df5]" /> Info
+                      </span>
                     </div>
                   </div>
-                );
-              })}
 
-              {/* ── AI explanation ── */}
-              <AiExplanation explanation={result.ai_explanation} />
+                  {/* ── Change cards ── */}
+                  {/* Critical first */}
+                  {["critical", "warning", "info"].map((sev) => {
+                    const group = changes.filter((c) => c.severity === sev);
+                    if (!group.length) return null;
+                    const sevCfg = SEV[sev];
+                    return (
+                      <div key={sev}>
+                        <p
+                          className="m-0 mb-3 text-[11.5px] font-semibold uppercase tracking-wider"
+                          style={{ color: sevCfg.color }}
+                        >
+                          {sevCfg.label}
+                        </p>
+                        <div className="flex flex-col gap-3">
+                          {group.map((change, i) => (
+                            <ChangeCard key={i} change={change} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
 
-              {/* ── Raw diff summary (collapsible) ── */}
-              <RawDiff summary={result.diff_summary} />
-            </div>
+                  {/* ── AI explanation ── */}
+                  <AiExplanation explanation={result.ai_explanation} />
+
+                  {/* ── Raw diff summary (collapsible) ── */}
+                  <RawDiff summary={result.diff_summary} />
+                </div>
+              )}
+            </>
           )}
+          </div>
         </div>
       </div>
-    </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Raw diff collapsible
-// ---------------------------------------------------------------------------
-function RawDiff({ summary }) {
+      // ---------------------------------------------------------------------------
+      // Raw diff collapsible
+      // ---------------------------------------------------------------------------
+      function RawDiff({summary}) {
   const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-2xl border border-[#1c2235] bg-[#0f1220]">
-      <button
-        className="flex w-full items-center gap-2 px-5 py-3.5 transition hover:bg-white/[0.02]"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="text-[12.5px] font-semibold text-[#9099ab]">Raw diff_summary</span>
-        <span className="ml-auto text-[#9099ab]">
-          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </span>
-      </button>
-      {open && (
-        <div className="border-t border-[#1c2235] px-5 py-4">
-          <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-[#9099ab]">
-            {summary}
-          </pre>
-        </div>
-      )}
-    </div>
-  );
+      return (
+      <div className="rounded-2xl border border-[#1c2235] bg-[#0f1220]">
+        <button
+          className="flex w-full items-center gap-2 px-5 py-3.5 transition hover:bg-white/[0.02]"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="text-[12.5px] font-semibold text-[#9099ab]">Raw diff_summary</span>
+          <span className="ml-auto text-[#9099ab]">
+            {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </span>
+        </button>
+        {open && (
+          <div className="border-t border-[#1c2235] px-5 py-4">
+            <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-[#9099ab]">
+              {summary}
+            </pre>
+          </div>
+        )}
+      </div>
+      );
 }
