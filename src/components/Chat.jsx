@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Server, Send, Sparkles } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
+import PodPilotLogo from "./Logo";
 
 // Canned responses so the page feels alive without a backend wired up yet.
 // Swap sendToBackend() for a real API call when ready.
@@ -36,11 +37,7 @@ function getMockReply(text) {
 }
 
 function AssistantAvatar() {
-  return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#171C2A] text-[#4f6df5] shadow-[0_0_0_1px_rgba(79,109,245,0.35),0_4px_14px_rgba(79,109,245,0.2)]">
-      <Server size={15} />
-    </span>
-  );
+  return <PodPilotLogo size={36} />;
 }
 
 function ChatBubble({ role, content }) {
@@ -49,10 +46,8 @@ function ChatBubble({ role, content }) {
     <div className={`flex items-start gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && <AssistantAvatar />}
       <div
-        className={`max-w-[70%] rounded-2xl px-4 py-3 text-[13.5px] leading-relaxed ${
-          isUser
-            ? "rounded-tr-sm bg-[#4f6df5] text-white"
-            : "rounded-tl-sm border border-[#1c1f2f] bg-[#171c2a] text-[#e7e9ee]"
+        className={`max-w-[70%] rounded-2xl px-5 py-4 text-[13.5px] leading-relaxed ${
+          isUser ? "bg-[#4f6df5] text-white" : "bg-[#161a26] text-[#e7e9ee]"
         }`}
       >
         {content}

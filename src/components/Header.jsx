@@ -1,5 +1,6 @@
 import { useState, useRef, useLayoutEffect } from "react";
-import { ChevronDown, MessageSquare, Wallet, GitCompareArrows, ShieldCheck, RefreshCw } from "lucide-react";
+import {MessageSquare, Wallet, GitCompareArrows, ShieldCheck, RefreshCw } from "lucide-react";
+import PodPilotLogo from "./Logo";
 
 const NAV_ITEMS = [
   { label: "Chat", icon: MessageSquare },
@@ -37,25 +38,8 @@ export default function Header({ activeTab, onTabChange }) {
         aria-hidden="true"
       />
 
-      {/* Brand */}
       <div className="relative z-10 flex items-center gap-2">
-        <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-[#171C2A] text-white shadow-[0_0_0_1px_rgba(79,109,245,0.35),0_4px_14px_rgba(79,109,245,0.25)]">
-          <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-            <path
-              d="M12 2 3 7v6c0 5 3.8 8.7 9 9 5.2-.3 9-4 9-9V7l-9-5Z"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8.5 12.2 11 14.6l4.5-5"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
+        <PodPilotLogo size={30} />
         <span className="font-semibold tracking-tight text-[15.5px] text-[#e7e9ee]">
           Pod Pilot
         </span>

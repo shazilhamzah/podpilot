@@ -3,6 +3,8 @@ import Header from "./components/Header"
 import Sidebar from "./components/Sidebar"
 import Chat from "./components/Chat"
 import CostBreakdown from "./components/CostBreakdown"
+import DriftDetection from "./components/DriftDetection"
+import Security from "./components/Security"
 
 const App = () => {
   const [activeTab, setActiveTab] = useState("Chat")
@@ -11,6 +13,10 @@ const App = () => {
     switch (activeTab) {
       case "Cost Breakdown":
         return <CostBreakdown />
+      case "Drift Detection":
+        return <DriftDetection />
+      case "Security":
+        return <Security />
       case "Chat":
       default:
         return <Chat />
