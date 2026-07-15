@@ -126,18 +126,32 @@ function fmtPct(actual, requested) {
 
 function groupByNamespace(pods) {
   const map = {};
-  pods.forEach((pod) => {
-    if (!map[pod.namespace]) {
-      map[pod.namespace] = {
-        namespace: pod.namespace,
+  pods.forEach((p) => {
+    const cost_per_month = (p.cost_per_hour || 0) * 730;
+    const wasted_cost_per_month = p.wasted_cost_per_month || 0;
+
+    if (!map[p.namespace]) {
+      map[p.namespace] = {
+        namespace: p.namespace,
         pods: [],
         cost_per_month: 0,
         wasted_cost_per_month: 0,
       };
     }
-    map[pod.namespace].pods.push(pod);
-    map[pod.namespace].cost_per_month += pod.cost_per_month;
-    map[pod.namespace].wasted_cost_per_month += pod.wasted_cost_per_month;
+
+    const normalizedPod = {
+      ...p,
+      cost_per_month,
+      wasted_cost_per_month,
+      cpu_requested_cores: p.cpu_requested || 0,
+      memory_requested_gb: p.mem_requested_gb || 0,
+      cpu_actual_cores: p.cpu_actual || 0,
+      memory_actual_gb: p.mem_actual_gb || 0,
+    };
+
+    map[p.namespace].pods.push(normalizedPod);
+    map[p.namespace].cost_per_month += cost_per_month;
+    map[p.namespace].wasted_cost_per_month += wasted_cost_per_month;
   });
   return Object.values(map).sort((a, b) => b.cost_per_month - a.cost_per_month);
 }
@@ -390,12 +404,56 @@ function NamespaceGroup({ group, totalClusterCost }) {
 // Main component
 // ---------------------------------------------------------------------------
 export default function CostBreakdown() {
-  const snap = MOCK_SNAPSHOT;
-  const groups = groupByNamespace(snap.pods);
-  const effectiveCost = snap.cluster_cost_per_month - snap.cluster_wasted_cost_per_month;
-  const wastePercent = Math.round(
-    (snap.cluster_wasted_cost_per_month / snap.cluster_cost_per_month) * 100
+  const [snap, setSnap] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSnapshot = async () => {
+      try {
+        const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+        const response = await fetch(`${backendUrl}/snapshot`);
+        if (!response.ok) throw new Error("Failed to fetch snapshot");
+        const data = await response.json();
+        setSnap(data.data);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    fetchSnapshot();
+  }, []);
+
+  if (error) return (
+    <div className="flex flex-1 min-h-0 items-center justify-center bg-[#0d0f18]">
+      <p className="text-[#ff6b6b]">Error loading cost data: {error}</p>
+    </div>
   );
+  if (!snap) return (
+    <div className="flex flex-1 min-h-0 flex-col items-center justify-center bg-[#0d0f18] text-[#9099ab]">
+      <div className="flex items-center gap-3">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-2.5 w-2.5 animate-bounce rounded-full bg-[#4f6df5]"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
+        ))}
+      </div>
+      <p className="mt-5 text-[14px] font-medium tracking-wide">Crunching cluster costs...</p>
+      <p className="mt-1 text-[12px] text-[#9099ab]/60">Pulling live data from your cluster</p>
+    </div>
+  );
+
+  const costSummary = snap.cost_summary || {};
+  const cluster_cost_per_hour = costSummary.total_cost_per_hour || 0;
+  const cluster_cost_per_month = cluster_cost_per_hour * 730;
+  const cluster_wasted_cost_per_month = costSummary.total_wasted_per_month || 0;
+  const cluster_wasted_cost_per_hour = costSummary.total_wasted_per_hour || 0;
+
+  const groups = groupByNamespace(snap.pods);
+  const effectiveCost = cluster_cost_per_month - cluster_wasted_cost_per_month;
+  const wastePercent = cluster_cost_per_month > 0 ? Math.round(
+    (cluster_wasted_cost_per_month / cluster_cost_per_month) * 100
+  ) : 0;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-[#0d0f18]">
@@ -418,8 +476,8 @@ export default function CostBreakdown() {
               <MetricCard
                 icon={DollarSign}
                 label="Total Monthly Cost"
-                value={fmt$(snap.cluster_cost_per_month)}
-                sub={`${fmt$(snap.cluster_cost_per_hour)}/hr`}
+                value={fmt$(cluster_cost_per_month)}
+                sub={`${fmt$(cluster_cost_per_hour)}/hr`}
                 color="#4f6df5"
                 glow
               />
@@ -435,8 +493,8 @@ export default function CostBreakdown() {
               <MetricCard
                 icon={TrendingDown}
                 label="Wasted Cost"
-                value={fmt$(snap.cluster_wasted_cost_per_month)}
-                sub={`${fmt$(snap.cluster_wasted_cost_per_hour)}/hr · ${wastePercent}% of budget`}
+                value={fmt$(cluster_wasted_cost_per_month)}
+                sub={`${fmt$(cluster_wasted_cost_per_hour)}/hr · ${wastePercent}% of budget`}
                 color="#f5a623"
                 glow
               />
@@ -454,7 +512,7 @@ export default function CostBreakdown() {
           <div
             className="flex shrink-0 items-center gap-7 rounded-2xl border border-[#1c2235] bg-[#0f1220] px-7 py-6"
           >
-            <DonutChart total={snap.cluster_cost_per_month} wasted={snap.cluster_wasted_cost_per_month} />
+            <DonutChart total={cluster_cost_per_month} wasted={cluster_wasted_cost_per_month} />
             <div className="flex flex-col gap-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -471,7 +529,7 @@ export default function CostBreakdown() {
                   <span className="text-[12.5px] text-[#9099ab]">Wasted Resources</span>
                 </div>
                 <p className="m-0 mt-0.5 pl-[18px] text-[18px] font-bold text-[#f5a623]">
-                  {fmt$(snap.cluster_wasted_cost_per_month)}
+                  {fmt$(cluster_wasted_cost_per_month)}
                 </p>
               </div>
               <p className="m-0 mt-1 max-w-[160px] text-[11.5px] leading-snug text-[#9099ab]">
@@ -489,7 +547,7 @@ export default function CostBreakdown() {
           {/* Stacked bar */}
           <div className="flex h-5 w-full overflow-hidden rounded-full">
             {groups.map((g, i) => {
-              const pct = (g.cost_per_month / snap.cluster_cost_per_month) * 100;
+              const pct = (g.cost_per_month / cluster_cost_per_month) * 100;
               const COLORS = ["#4f6df5", "#9b8afb", "#50e3c2", "#f5a623", "#ff6b6b"];
               return (
                 <div
@@ -525,7 +583,7 @@ export default function CostBreakdown() {
             <NamespaceGroup
               key={g.namespace}
               group={g}
-              totalClusterCost={snap.cluster_cost_per_month}
+              totalClusterCost={cluster_cost_per_month}
             />
           ))}
         </div>

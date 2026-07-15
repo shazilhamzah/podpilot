@@ -4,3 +4,4 @@ backend/kubectl
 backend/minikube-linux-amd64
 backend/get-docker.sh
 .gitignore
+*node_modules

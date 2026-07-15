@@ -17,7 +17,8 @@ from health import (
     analyze_reliability,
     analyze_performance,
     analyze_storage,
-    analyze_security
+    analyze_security,
+    chat_with_cluster
 )
 from trivy import scan_all_images, trivy_ai_summary, trivy_to_issues
 from drift_detection import (
@@ -157,7 +158,7 @@ async def get_health():
 async def chat(request: ChatRequest):
     try:
         snap = get_cached_snapshot()
-        ans = analyze(request.question, snap)
+        ans = chat_with_cluster(request.question, snap)
         age = int(time.time() - _cache["last_updated"]) if _cache["last_updated"] else 0
         return {
             "question": request.question,

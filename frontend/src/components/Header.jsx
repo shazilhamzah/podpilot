@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { ChevronDown, MessageSquare, Wallet, GitCompareArrows, ShieldCheck, RefreshCw } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -8,13 +8,11 @@ const NAV_ITEMS = [
   { label: "Security", icon: ShieldCheck },
 ];
 
-// Hardcoded for now — wire up to real snapshot state later.
-const LAST_SNAPSHOT_LABEL = "Last snapshot";
-const LAST_SNAPSHOT_VALUE = "2 mins ago";
-
 export default function Header({ activeTab, onTabChange }) {
   const tabRefs = useRef({});
   const [indicator, setIndicator] = useState({ left: 0, width: 0, ready: false });
+  const [snapshotAge, setSnapshotAge] = useState("Loading...");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Measure the active tab's position/width whenever it changes (or on mount/resize)
   // so the sliding indicator can be positioned with real pixel values.
@@ -30,6 +28,42 @@ export default function Header({ activeTab, onTabChange }) {
     return () => window.removeEventListener("resize", measure);
   }, [activeTab]);
 
+  useEffect(() => {
+    const fetchSnapshotStatus = async () => {
+      try {
+        const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+        const res = await fetch(`${backendUrl}/snapshot`);
+        const data = await res.json();
+        if (data.cached_at) {
+          const cachedDate = new Date(data.cached_at);
+          const mins = Math.round((new Date() - cachedDate) / 60000);
+          setSnapshotAge(mins === 0 ? "Just now" : `${mins} mins ago`);
+        } else {
+          setSnapshotAge("Never");
+        }
+      } catch (err) {
+        setSnapshotAge("Unknown");
+      }
+    };
+    fetchSnapshotStatus();
+    const interval = setInterval(fetchSnapshotStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setSnapshotAge("Refreshing...");
+    try {
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+      await fetch(`${backendUrl}/refresh`, { method: "POST" });
+      setSnapshotAge("Just now");
+    } catch (err) {
+      setSnapshotAge("Error");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <header className="relative flex items-center gap-7 overflow-hidden border-b border-[#1c1f2f] bg-[#171c2a] px-7 py-3.5">
       <div
@@ -42,7 +76,7 @@ export default function Header({ activeTab, onTabChange }) {
         <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-[#171C2A] text-white shadow-[0_0_0_1px_rgba(79,109,245,0.35),0_4px_14px_rgba(79,109,245,0.25)]">
           <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
             <path
-              d="M12 2 3 7v6c0 5 3.8 8.7 9 9 5.2-.3 9-4 9-9V7l-9-5Z"
+              d="M12 2 3 7v6c0 5 3.8 8.7 9 9-5.2-.3 9-4 9-9V7l-9-5Z"
               stroke="currentColor"
               strokeWidth="1.6"
               strokeLinejoin="round"
@@ -103,14 +137,18 @@ export default function Header({ activeTab, onTabChange }) {
       {/* Right side: last snapshot readout + refresh action */}
       <div className="relative z-10 ml-auto flex items-center gap-3">
         <div className="text-right leading-tight">
-          <p className="m-0 text-[12px] text-[#9099ab]">{LAST_SNAPSHOT_LABEL}</p>
-          <p className="m-0 text-[14px] font-semibold text-[#e7e9ee]">{LAST_SNAPSHOT_VALUE}</p>
+          <p className="m-0 text-[12px] text-[#9099ab]">Last snapshot</p>
+          <p className="m-0 text-[14px] font-semibold text-[#e7e9ee]">{snapshotAge}</p>
         </div>
         <button
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e7e9ee]/70 text-[#e7e9ee] transition hover:border-white hover:bg-white/5 active:translate-y-px"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className={`flex h-9 w-9 items-center justify-center rounded-full border border-[#e7e9ee]/70 text-[#e7e9ee] transition hover:border-white hover:bg-white/5 ${
+            isRefreshing ? "opacity-50 cursor-not-allowed" : "active:translate-y-px"
+          }`}
           aria-label="Refresh snapshot"
         >
-          <RefreshCw size={16} />
+          <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
         </button>
       </div>
     </header>

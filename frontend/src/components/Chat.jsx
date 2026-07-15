@@ -95,7 +95,7 @@ export default function Chat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
 
-  function sendMessage(text) {
+  async function sendMessage(text) {
     const trimmed = text.trim();
     if (!trimmed || isTyping) return;
 
@@ -104,11 +104,25 @@ export default function Chat() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setIsTyping(true);
 
-    // Simulated latency — replace with the real API call.
-    setTimeout(() => {
+    try {
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+      const response = await fetch(`${backendUrl}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: trimmed }),
+      });
+      if (!response.ok) throw new Error("Failed to fetch response");
+      const data = await response.json();
+      setMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, I couldn't connect to the backend API." },
+      ]);
+    } finally {
       setIsTyping(false);
-      setMessages((prev) => [...prev, { role: "assistant", content: getMockReply(trimmed) }]);
-    }, 900);
+    }
   }
 
   function handleKeyDown(e) {

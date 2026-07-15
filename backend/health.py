@@ -17,6 +17,92 @@ def analyze(prompt: str, slice_data: dict) -> str:
     )
     return chat_completion.choices[0].message.content
 
+def chat_with_cluster(prompt: str, snapshot: dict) -> str:
+    import json
+    prompt_lower = prompt.lower()
+
+    # Determine which sections are relevant based on the question
+    wants_nodes    = any(k in prompt_lower for k in ["cpu", "memory", "node", "utiliz", "capacity", "ram"])
+    wants_cost     = any(k in prompt_lower for k in ["cost", "waste", "price", "spend", "money", "expensive", "budget"])
+    wants_security = any(k in prompt_lower for k in ["security", "root", "limit", "port", "expose", "nodeport", "network"])
+    wants_storage  = any(k in prompt_lower for k in ["pvc", "storage", "disk", "volume", "persistent"])
+    wants_deploy   = any(k in prompt_lower for k in ["deploy", "replica", "scale", "rollout", "restart", "crashloop", "crash"])
+    wants_pods     = any(k in prompt_lower for k in ["pod", "container", "running", "pending", "failed", "status"])
+
+    # Always include at least pods if nothing matched
+    if not any([wants_nodes, wants_cost, wants_security, wants_storage, wants_deploy, wants_pods]):
+        wants_pods = True
+
+    slice_data = {}
+
+    if wants_cost:
+        slice_data["cost_summary"] = snapshot.get("cost_summary", {})
+
+    if wants_nodes:
+        slice_data["nodes"] = [
+            {
+                "name": n.get("name"),
+                "cpu_capacity": n.get("cpu_capacity"),
+                "cpu_usage": n.get("cpu_usage"),
+                "cpu_utilization_pct": round(n.get("cpu_usage", 0) / n.get("cpu_capacity", 1) * 100, 1) if n.get("cpu_capacity") else None,
+                "mem_capacity_gb": round(n.get("mem_capacity_gb", 0), 2),
+                "mem_usage_gb": round(n.get("mem_usage_gb", 0), 2),
+                "mem_utilization_pct": round(n.get("mem_usage_gb", 0) / n.get("mem_capacity_gb", 1) * 100, 1) if n.get("mem_capacity_gb") else None,
+            } for n in snapshot.get("nodes", [])
+        ]
+
+    if wants_pods or wants_cost or wants_security or wants_deploy:
+        pod_fields = ["name", "namespace", "status", "status_phase", "restart_count",
+                      "cpu_requested", "cpu_actual", "mem_requested_gb", "mem_actual_gb",
+                      "cost_per_hour", "wasted_cost_per_month",
+                      "has_cpu_limit", "has_mem_limit", "runs_as_root"]
+        slice_data["pods"] = [
+            {k: p.get(k) for k in pod_fields if p.get(k) is not None}
+            for p in snapshot.get("pods", [])
+        ]
+
+    if wants_deploy:
+        slice_data["deployments"] = [
+            {"name": d.get("name"), "namespace": d.get("namespace"),
+             "desired_replicas": d.get("desired_replicas"), "ready_replicas": d.get("ready_replicas")}
+            for d in snapshot.get("deployments", [])
+        ]
+
+    if wants_security:
+        slice_data["services"] = [
+            {"name": s.get("name"), "namespace": s.get("namespace"), "type": s.get("type"), "port": s.get("port")}
+            for s in snapshot.get("services", [])
+        ]
+
+    if wants_storage:
+        slice_data["pvcs"] = [
+            {"name": pvc.get("name"), "namespace": pvc.get("namespace"),
+             "status": pvc.get("status"), "capacity_gb": pvc.get("capacity_gb"), "is_attached": pvc.get("is_attached")}
+            for pvc in snapshot.get("pvcs", [])
+        ]
+
+    snapshot_json = json.dumps(slice_data, default=str)
+
+    system_prompt = (
+        "You are a Kubernetes cluster copilot with access to a live cluster snapshot. "
+        "Answer the user's question using the data provided. Be concise and practical. "
+        "Use bullet points or bold for clarity. Calculate percentages when asked about utilization."
+    )
+    full_prompt = f"Cluster snapshot:\n{snapshot_json}\n\nQuestion: {prompt}"
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": full_prompt}
+        ],
+        model=os.getenv("MODEL"),
+        temperature=0.3,
+        max_tokens=512,
+    )
+    return chat_completion.choices[0].message.content
+
+
+
 # ═══════════════════════════════════════
 # SECTION 1 — SLICE EXTRACTION HELPERS
 # ═══════════════════════════════════════
