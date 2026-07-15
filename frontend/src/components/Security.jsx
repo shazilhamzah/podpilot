@@ -345,9 +345,49 @@ function SeveritySection({ severity, checks, selectedSnapshotId }) {
 }
 
 // ---------------------------------------------------------------------------
+// Resource section
+// ---------------------------------------------------------------------------
+function ResourceSection({ resource, checks, selectedSnapshotId }) {
+  const count = checks.length;
+  const hasCritical = checks.some((c) => c.severity.toLowerCase() === "critical");
+  const hasWarning = checks.some((c) => c.severity.toLowerCase() === "warning");
+  const maxSev = hasCritical ? "critical" : hasWarning ? "warning" : "info";
+  const sevCfg = SEV[maxSev] || SEV.info;
+  const Icon = Box; // using Box icon for resource
+
+  return (
+    <div>
+      {/* Section heading */}
+      <div className="mb-3 flex items-center gap-2.5">
+        <div 
+          className="flex h-7 w-7 items-center justify-center rounded-lg"
+          style={{ background: sevCfg.bg }}
+        >
+          <Icon size={14} style={{ color: sevCfg.color }} />
+        </div>
+        <p className="m-0 text-[13.5px] font-bold text-[#e7e9ee] font-mono break-all">{resource}</p>
+        <div className="flex items-center gap-1.5 ml-1">
+          <span 
+            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+            style={{ background: sevCfg.bg, color: sevCfg.color }}
+          >
+            {count} issue{count !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {checks.map((c) => <CheckCard key={c.id} check={c} selectedSnapshotId={selectedSnapshotId} />)}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 export default function Security({ selectedSnapshotId, snapshots }) {
+  const [viewMode, setViewMode] = useState("severity");
   const [activeSeverity, setActiveSeverity] = useState("All");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -459,6 +499,34 @@ export default function Security({ selectedSnapshotId, snapshots }) {
           .filter((g) => g.checks.length > 0)
       : [{ sev: activeSeverity.toLowerCase(), checks: filtered }];
 
+  // Group by resource
+  const resourceMap = {};
+  filtered.forEach(issue => {
+    const resList = issue.resources && issue.resources.length > 0 ? issue.resources : ["Unknown Resource"];
+    resList.forEach(res => {
+      if (!resourceMap[res]) resourceMap[res] = [];
+      resourceMap[res].push(issue);
+    });
+  });
+  
+  const groupedResources = Object.entries(resourceMap).map(([resource, checks]) => ({
+    resource,
+    checks
+  }));
+
+  // Sort resources by max severity then by issue count
+  groupedResources.sort((a, b) => {
+    const aCrit = a.checks.some(c => c.severity.toLowerCase() === "critical") ? 1 : 0;
+    const bCrit = b.checks.some(c => c.severity.toLowerCase() === "critical") ? 1 : 0;
+    if (aCrit !== bCrit) return bCrit - aCrit;
+    
+    const aWarn = a.checks.some(c => c.severity.toLowerCase() === "warning") ? 1 : 0;
+    const bWarn = b.checks.some(c => c.severity.toLowerCase() === "warning") ? 1 : 0;
+    if (aWarn !== bWarn) return bWarn - aWarn;
+
+    return b.checks.length - a.checks.length;
+  });
+
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-[#0d0f18]">
       <div className="mx-auto w-full max-w-5xl px-8 py-8">
@@ -523,46 +591,84 @@ export default function Security({ selectedSnapshotId, snapshots }) {
           </div>
         </div>
 
-        {/* ── Severity filter tabs ── */}
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          {["All", ...availableSeverities].map((sevName) => {
-            const active = sevName === activeSeverity;
-            return (
-              <button
-                key={sevName}
-                onClick={() => setActiveSeverity(sevName)}
-                className="rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all capitalize"
-                style={
-                  active
-                    ? {
-                        background: "#4f6df5",
-                        borderColor: "#4f6df5",
-                        color: "#fff",
-                        boxShadow: "0 0 14px #4f6df544",
-                      }
-                    : {
-                        background: "#0f1220",
-                        borderColor: "#1c2235",
-                        color: "#9099ab",
-                      }
-                }
-              >
-                {sevName}
-              </button>
-            );
-          })}
-
-          {/* Count badge */}
-          <span className="ml-auto text-[12px] text-[#9099ab]">
-            {filtered.length} check{filtered.length !== 1 ? "s" : ""} shown
-          </span>
+        {/* ── View Mode & Severity filter tabs ── */}
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-semibold text-[#9099ab] uppercase tracking-wider">Group By:</span>
+              <div className="flex rounded-lg border border-[#1c2235] bg-[#0f1220] p-1">
+                <button
+                  onClick={() => setViewMode("severity")}
+                  className={`rounded-md px-4 py-1.5 text-[12px] font-medium transition-all ${
+                    viewMode === "severity"
+                      ? "bg-[#2a2f45] text-[#e7e9ee] shadow-sm"
+                      : "text-[#9099ab] hover:text-[#e7e9ee]"
+                  }`}
+                >
+                  Severity
+                </button>
+                <button
+                  onClick={() => setViewMode("resource")}
+                  className={`rounded-md px-4 py-1.5 text-[12px] font-medium transition-all ${
+                    viewMode === "resource"
+                      ? "bg-[#2a2f45] text-[#e7e9ee] shadow-sm"
+                      : "text-[#9099ab] hover:text-[#e7e9ee]"
+                  }`}
+                >
+                  Resource
+                </button>
+              </div>
+            </div>
+            
+            <div className="h-6 w-px bg-[#1c2235]"></div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              {["All", ...availableSeverities].map((sevName) => {
+                const active = sevName === activeSeverity;
+                return (
+                  <button
+                    key={sevName}
+                    onClick={() => setActiveSeverity(sevName)}
+                    className="rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all capitalize"
+                    style={
+                      active
+                        ? {
+                            background: "#4f6df5",
+                            borderColor: "#4f6df5",
+                            color: "#fff",
+                            boxShadow: "0 0 14px #4f6df544",
+                          }
+                        : {
+                            background: "#0f1220",
+                            borderColor: "#1c2235",
+                            color: "#9099ab",
+                          }
+                    }
+                  >
+                    {sevName}
+                  </button>
+                );
+              })}
+              
+              {/* Count badge */}
+              <span className="ml-3 text-[12px] text-[#9099ab]">
+                {filtered.length} check{filtered.length !== 1 ? "s" : ""} shown
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* ── Check sections ── */}
         <div className="flex flex-col gap-8">
-          {groupedSeverities.map(({ sev, checks }) => (
-            <SeveritySection key={sev} severity={sev} checks={checks} selectedSnapshotId={selectedSnapshotId} />
-          ))}
+          {viewMode === "severity" ? (
+            groupedSeverities.map(({ sev, checks }) => (
+              <SeveritySection key={sev} severity={sev} checks={checks} selectedSnapshotId={selectedSnapshotId} />
+            ))
+          ) : (
+            groupedResources.map(({ resource, checks }) => (
+              <ResourceSection key={resource} resource={resource} checks={checks} selectedSnapshotId={selectedSnapshotId} />
+            ))
+          )}
         </div>
 
         {/* ── Footer note ── */}

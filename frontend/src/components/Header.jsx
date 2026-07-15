@@ -91,7 +91,9 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
       if (onSnapshotCreated) {
         onSnapshotCreated();
       }
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
     } catch (err) {
       setSnapshotAge("Error");
     } finally {
