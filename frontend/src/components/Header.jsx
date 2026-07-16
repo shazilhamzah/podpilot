@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
-import { ChevronDown, MessageSquare, Wallet, GitCompareArrows, ShieldCheck, Plus, X, Loader2 } from "lucide-react";
+import { ChevronDown, MessageSquare, Wallet, GitCompareArrows, ShieldCheck, Plus, X, Loader2, Check } from "lucide-react";
 import PodPilotLogo from "./PodPilotLogo";
 import { cachedFetch } from "../utils/fetchCache";
 
@@ -20,6 +20,25 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [snapshotName, setSnapshotName] = useState("");
   const [snapshotComments, setSnapshotComments] = useState("");
+
+  // Custom Dropdown state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedSnapshot = snapshots && snapshots.find(s => s.id === selectedSnapshotId);
+  const selectedSnapshotLabel = selectedSnapshot 
+    ? (selectedSnapshot.name || `Snapshot at ${new Date(selectedSnapshot.captured_at).toLocaleDateString()}`)
+    : "Select Snapshot...";
 
   // Measure the active tab's position/width whenever it changes (or on mount/resize)
   // so the sliding indicator can be positioned with real pixel values.
@@ -104,11 +123,13 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
 
   return (
     <>
-      <header className="relative flex items-center gap-7 overflow-hidden border-b border-[#1c1f2f] bg-[#171c2a] px-7 py-3.5">
-        <div
-          className="pointer-events-none absolute -left-24 -top-40 h-64 w-96 rotate-[-20deg] bg-[#171C2A] via-[#4f6df5]/40 to-transparent opacity-70 blur-2xl"
-          aria-hidden="true"
-        />
+      <header className="relative flex items-center gap-7 border-b border-[#1c1f2f] bg-[#171c2a] px-7 py-3.5">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute -left-24 -top-40 h-64 w-96 rotate-[-20deg] bg-[#171C2A] via-[#4f6df5]/40 to-transparent opacity-70 blur-2xl"
+            aria-hidden="true"
+          />
+        </div>
 
         {/* Brand */}
         <div className="relative z-10 flex items-center gap-2">
@@ -159,28 +180,69 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
 
         {/* Right side: last snapshot readout + refresh action */}
         <div className="relative z-10 ml-auto flex items-center gap-4">
-          <div className="flex items-center gap-2 mr-3">
+          <div className="flex items-center gap-2 mr-3" ref={dropdownRef}>
             <span className="text-[11.5px] font-semibold tracking-wider text-[#9099ab] uppercase">Context:</span>
             <div className="relative">
-              <select
-                value={selectedSnapshotId}
-                onChange={(e) => setSelectedSnapshotId(e.target.value)}
-                className="appearance-none cursor-pointer rounded-lg border border-[#1c1f2f] bg-[#0d0f18] pl-3 pr-8 py-1.5 text-[13px] font-medium text-[#e7e9ee] shadow-sm outline-none transition-all hover:border-[#2a2f45] hover:bg-[#121421] focus:border-[#4f6df5] focus:ring-1 focus:ring-[#4f6df5]/50"
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center justify-between gap-2 min-w-[190px] cursor-pointer rounded-lg border border-[#1c1f2f] bg-[#0d0f18] px-3 py-1.5 text-[13px] font-medium text-[#e7e9ee] shadow-sm outline-none transition-all hover:border-[#2a2f45] hover:bg-[#121421] focus:border-[#4f6df5] focus:ring-1 focus:ring-[#4f6df5]/50"
               >
-                {!selectedSnapshotId && (
-                  <option value="" disabled>Loading snapshots...</option>
-                )}
-                {snapshots && snapshots.map((s, idx) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name || `Snapshot at ${new Date(s.captured_at).toLocaleString()}`}
-                    {idx === 0 ? " (Latest)" : ""}
-                    {s.comments ? ` (${s.comments})` : ""}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-[#9099ab]">
-                <ChevronDown size={14} />
-              </div>
+                <span className="truncate max-w-[140px]">
+                  {selectedSnapshotLabel}
+                </span>
+                <ChevronDown size={14} className={`text-[#9099ab] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-1.5 w-80 max-h-72 overflow-y-auto rounded-lg border border-[#2a2e40] bg-[#171c2a] shadow-xl z-50 py-1">
+                  {(!snapshots || snapshots.length === 0) ? (
+                    <div className="px-3.5 py-2 text-[13px] text-[#9099ab]">
+                      Loading snapshots...
+                    </div>
+                  ) : (
+                    snapshots.map((s, idx) => {
+                      const isSelected = s.id === selectedSnapshotId;
+                      const dateStr = new Date(s.captured_at).toLocaleString();
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => {
+                            setSelectedSnapshotId(s.id);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full text-left flex items-start justify-between gap-2 px-3.5 py-2.5 hover:bg-[#4f6df5]/10 hover:text-white transition-colors border-b border-[#2a2e40]/30 last:border-b-0 cursor-pointer ${
+                            isSelected ? 'bg-[#4f6df5]/15 text-white' : 'text-[#e7e9ee]'
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[13px] font-semibold truncate max-w-[180px]">
+                                {s.name || `Snapshot`}
+                              </span>
+                              {idx === 0 && (
+                                <span className="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-[#4f6df5]/20 text-[#6f7bff]">
+                                  Latest
+                                </span>
+                              )}
+                            </div>
+                            <span className="block text-[11px] text-[#9099ab] mt-0.5">
+                              {dateStr}
+                            </span>
+                            {s.comments && (
+                              <span className="block text-[11.5px] text-[#9099ab]/80 mt-1 italic line-clamp-2">
+                                "{s.comments}"
+                              </span>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <Check size={14} className="text-[#4f6df5] mt-1 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="text-right leading-tight">
@@ -190,7 +252,7 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
           <button
             onClick={() => setIsModalOpen(true)}
             disabled={isRefreshing}
-            className={`flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-gradient-to-r from-[#6f7bff] to-[#3546c4] text-white shadow-[0_2px_8px_rgba(79,109,245,0.25)] transition-all hover:shadow-[0_4px_12px_rgba(79,109,245,0.4)] hover:brightness-110 ${
+            className={`flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-[#6f7bff] to-[#3546c4] text-white shadow-[0_2px_8px_rgba(79,109,245,0.25)] transition-all hover:shadow-[0_4px_12px_rgba(79,109,245,0.4)] hover:brightness-110 ${
               isRefreshing ? "opacity-50 cursor-not-allowed" : "active:scale-95"
             }`}
           >
@@ -199,7 +261,7 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
             ) : (
               <Plus size={14} />
             )}
-            <span className="text-[12.5px] font-semibold tracking-wide">Create Snapshot</span>
+            {/* <span className="text-[12.5px] font-semibold tracking-wide">Create Snapshot</span> */}
           </button>
         </div>
       </header>
