@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { flushSync } from "react-dom"
 import Header from "./components/Header"
 import Sidebar from "./components/Sidebar"
 import Chat from "./components/Chat"
@@ -34,6 +35,19 @@ const App = () => {
     fetchHistory();
   }, []);
 
+  const navigateToTab = (newTab) => {
+    if (newTab === activeTab) return;
+    if (!document.startViewTransition) {
+      setActiveTab(newTab);
+      return;
+    }
+    document.startViewTransition(() => {
+      flushSync(() => {
+        setActiveTab(newTab);
+      });
+    });
+  };
+
   function renderMain() {
     switch (activeTab) {
       case "Cost Breakdown":
@@ -58,7 +72,7 @@ const App = () => {
     <div className="flex h-screen flex-col">
       <Header 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+        onTabChange={navigateToTab} 
         snapshots={snapshots}
         selectedSnapshotId={selectedSnapshotId}
         setSelectedSnapshotId={setSelectedSnapshotId}
@@ -66,7 +80,9 @@ const App = () => {
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar selectedSnapshotId={selectedSnapshotId} activeTab={activeTab} />
-        {renderMain()}
+        <main className="main-content flex-1 min-w-0 flex flex-col">
+          {renderMain()}
+        </main>
       </div>
     </div>
   )

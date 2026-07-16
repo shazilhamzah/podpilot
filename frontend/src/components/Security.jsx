@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { cachedFetch } from "../utils/fetchCache";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -403,7 +404,7 @@ export default function Security({ selectedSnapshotId, snapshots }) {
           ? `${backendUrl}/security?snapshot_id=${selectedSnapshotId}`
           : `${backendUrl}/security`;
         
-        const res = await fetch(url);
+        const res = await cachedFetch(url);
         if (!res.ok) throw new Error("Failed to fetch security analysis");
         
         const data = await res.json();

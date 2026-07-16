@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html, body {
+  background-color: #0d0f18;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #2d3250 transparent;
@@ -79,4 +83,46 @@
   font-weight: 600;
   margin: 0.6em 0 0.3em 0;
   color: #f1f5f9;
+}
+
+/* View Transitions */
+::view-transition {
+  background-color: #0d0f18;
+}
+
+.main-content {
+  view-transition-name: main-content;
+  will-change: opacity, transform;
+}
+
+::view-transition-old(main-content),
+::view-transition-new(main-content) {
+  animation-duration: 0.18s;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+::view-transition-old(main-content) {
+  animation-name: fade-out;
+}
+
+::view-transition-new(main-content) {
+  animation-name: fade-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(main-content),
+  ::view-transition-new(main-content) {
+    animation: none;
+  }
 }

@@ -498,11 +498,9 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
         name = request.name if request else None
         comments = request.comments if request else None
         
-        # Explicitly save this manually triggered snapshot
-        await save_snapshot(clean_snap, name, comments)
-        
         cache = await load_cache()
         
+        analysis_results_to_save = {}
         old_snap = cache.get("snapshot")
         if old_snap is not None:
             old_fp = _structural_fingerprint(old_snap)
@@ -517,9 +515,13 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
                 cache["analysis_results"] = {}
             else:
                 print("[CACHE] Metrics updated, structure unchanged — keeping analysis cache on refresh.")
+                analysis_results_to_save = cache.get("analysis_results", {})
         else:
             print("[CACHE INIT] Initial snapshot cached on refresh.")
             cache["analysis_results"] = {}
+            
+        # Explicitly save this manually triggered snapshot
+        await save_snapshot(clean_snap, name, comments, analysis_results=analysis_results_to_save)
             
         cache["snapshot"] = clean_snap
         cache["last_updated"] = now

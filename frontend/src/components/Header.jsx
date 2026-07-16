@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { ChevronDown, MessageSquare, Wallet, GitCompareArrows, ShieldCheck, Plus, X, Loader2 } from "lucide-react";
 import PodPilotLogo from "./PodPilotLogo";
+import { cachedFetch } from "../utils/fetchCache";
 
 const NAV_ITEMS = [
   { label: "Chat", icon: MessageSquare },
@@ -40,7 +41,7 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
       try {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
         const url = selectedSnapshotId ? `${backendUrl}/snapshot?snapshot_id=${selectedSnapshotId}` : `${backendUrl}/snapshot`;
-        const res = await fetch(url);
+        const res = await cachedFetch(url);
         const data = await res.json();
         if (data.cached_at) {
           const cachedDate = new Date(data.cached_at);
@@ -167,7 +168,7 @@ export default function Header({ activeTab, onTabChange, snapshots, selectedSnap
                 className="appearance-none cursor-pointer rounded-lg border border-[#1c1f2f] bg-[#0d0f18] pl-3 pr-8 py-1.5 text-[13px] font-medium text-[#e7e9ee] shadow-sm outline-none transition-all hover:border-[#2a2f45] hover:bg-[#121421] focus:border-[#4f6df5] focus:ring-1 focus:ring-[#4f6df5]/50"
               >
                 {!selectedSnapshotId && (
-                  <option value="" disabled>Generating new snapshot...</option>
+                  <option value="" disabled>Loading snapshots...</option>
                 )}
                 {snapshots && snapshots.map((s, idx) => (
                   <option key={s.id} value={s.id}>

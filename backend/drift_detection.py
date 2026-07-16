@@ -55,7 +55,7 @@ from db import db
 # Step 1: save a timestamped sanitized snapshot to database
 # ---------------------------------------------------------------------------
 
-async def save_snapshot(sanitized: dict, name: str = None, comments: str = None) -> str:
+async def save_snapshot(sanitized: dict, name: str = None, comments: str = None, analysis_results: dict = None) -> str:
     """Writes a sanitized snapshot to MongoDB with a timestamp, name, and comments.
     Returns the ObjectId string."""
     if db is None:
@@ -72,7 +72,8 @@ async def save_snapshot(sanitized: dict, name: str = None, comments: str = None)
         "captured_at": ts,
         "name": name,
         "comments": comments,
-        "snapshot": sanitized
+        "snapshot": sanitized,
+        "analysis_results": analysis_results or {}
     }
     result = await db.snapshots.insert_one(doc)
     return str(result.inserted_id)

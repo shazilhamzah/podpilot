@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { cachedFetch } from "../utils/fetchCache";
 import {
   DollarSign,
   TrendingDown,
@@ -413,7 +414,7 @@ export default function CostBreakdown({ selectedSnapshotId }) {
       try {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
         const query = selectedSnapshotId ? `?snapshot_id=${selectedSnapshotId}` : '';
-        const response = await fetch(`${backendUrl}/snapshot${query}`);
+        const response = await cachedFetch(`${backendUrl}/snapshot${query}`);
         if (!response.ok) throw new Error("Failed to fetch snapshot");
         const data = await response.json();
         setSnap(data.data);

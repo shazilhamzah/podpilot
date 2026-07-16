@@ -1,5 +1,6 @@
 import { AlertCircle, AlertTriangle, Info, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState, useEffect } from "react";
+import { cachedFetch } from "../utils/fetchCache";
 
 
 
@@ -98,8 +99,8 @@ export default function Sidebar({ selectedSnapshotId, activeTab }) {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
         const query = selectedSnapshotId ? `?snapshot_id=${selectedSnapshotId}` : '';
         const [snapRes, healthRes] = await Promise.all([
-          fetch(`${backendUrl}/snapshot${query}`),
-          fetch(`${backendUrl}/health${query}`)
+          cachedFetch(`${backendUrl}/snapshot${query}`),
+          cachedFetch(`${backendUrl}/health${query}`)
         ]);
         if (snapRes.ok) setSnapshot(await snapRes.json());
         if (healthRes.ok) setHealth(await healthRes.json());

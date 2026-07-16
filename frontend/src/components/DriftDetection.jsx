@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { cachedFetch } from "../utils/fetchCache";
 import {
   GitCompareArrows,
   RefreshCw,
@@ -464,7 +465,7 @@ function CompareSnapshotsView({ onClose, snapshots }) {
     setError(null);
     try {
       const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
-      const res = await fetch(`${backendUrl}/compare?snap_a=${snapA}&snap_b=${snapB}`);
+      const res = await cachedFetch(`${backendUrl}/compare?snap_a=${snapA}&snap_b=${snapB}`);
       if (!res.ok) throw new Error("Failed to compare snapshots");
       const data = await res.json();
       setResult(data);
@@ -612,7 +613,7 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
         const url = selectedSnapshotId 
           ? `${backendUrl}/drift?snapshot_id=${selectedSnapshotId}`
           : `${backendUrl}/drift`;
-        const res = await fetch(url);
+        const res = await cachedFetch(url);
         if (!res.ok) throw new Error("Failed to fetch drift analysis");
         const data = await res.json();
         setResult(data);
