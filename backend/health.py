@@ -455,7 +455,7 @@ def proactive_health_check(snapshot: dict) -> dict:
     SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
     deduped_issues.sort(key=lambda x: SEVERITY_ORDER.get(x.get("severity", "info"), 2))
 
-    top_issues = deduped_issues[:10]
+    top_issues = deduped_issues
 
     critical_count = sum(1 for x in deduped_issues if x.get("severity") == "critical")
     warning_count = sum(1 for x in deduped_issues if x.get("severity") == "warning")

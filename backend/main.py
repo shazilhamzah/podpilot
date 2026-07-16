@@ -515,7 +515,9 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
                 cache["analysis_results"] = {}
             else:
                 print("[CACHE] Metrics updated, structure unchanged — keeping analysis cache on refresh.")
-                analysis_results_to_save = cache.get("analysis_results", {})
+                latest_doc = await db.snapshots.find_one({}, sort=[("captured_at", -1)])
+                db_analysis = latest_doc.get("analysis_results", {}) if latest_doc else {}
+                analysis_results_to_save = {**db_analysis, **cache.get("analysis_results", {})}
         else:
             print("[CACHE INIT] Initial snapshot cached on refresh.")
             cache["analysis_results"] = {}

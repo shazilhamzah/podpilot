@@ -1,7 +1,28 @@
 import subprocess
 import json
 import datetime
+import os
 from health import analyze
+
+TRIVY_CACHE_FILE = "trivy_cache.json"
+
+def load_trivy_cache():
+    if os.path.exists(TRIVY_CACHE_FILE):
+        try:
+            with open(TRIVY_CACHE_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_trivy_cache(cache):
+    try:
+        with open(TRIVY_CACHE_FILE, "w") as f:
+            json.dump(cache, f)
+    except Exception as e:
+        print(f"Error saving trivy cache: {e}")
+
+trivy_global_cache = load_trivy_cache()
 
 def get_unique_images(snapshot: dict) -> list[str]:
     images = set()
@@ -17,6 +38,10 @@ def get_unique_images(snapshot: dict) -> list[str]:
     return list(images)
 
 def scan_image(image: str) -> dict:
+    if image in trivy_global_cache:
+        print(f"Skipping {image} (already in global cache)")
+        return trivy_global_cache[image]
+        
     print(f"Scanning {image}... (first run may take 1-2 mins)")
     try:
         result = subprocess.run(
@@ -62,7 +87,7 @@ def scan_image(image: str) -> dict:
                     "title": vuln.get("Title", "")
                 })
                 
-        return {
+        result_dict = {
             "image": image,
             "status": "scanned",
             "critical": critical_count,
@@ -70,6 +95,10 @@ def scan_image(image: str) -> dict:
             "cves": cves,
             "error": None
         }
+        
+        trivy_global_cache[image] = result_dict
+        save_trivy_cache(trivy_global_cache)
+        return result_dict
     except subprocess.TimeoutExpired:
         return {
             "image": image,
