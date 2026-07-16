@@ -688,22 +688,6 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
         <p className="m-0 mb-1 text-[11px] font-semibold uppercase tracking-wider text-[#9099ab]">
           Snapshot History
         </p>
-        
-        {/* Historical Snapshots */}
-        {snapshots && snapshots.map((snap, idx) => (
-          <TimelineItem
-            key={snap.id}
-            snap={snap}
-            isLatest={idx === 0}
-            active={snap.id === selectedSnapshotId && !showCompareModal}
-            onClick={() => {
-              setSelectedSnapshotId(snap.id);
-              setShowCompareModal(false);
-            }}
-          />
-        ))}
-
-        <div className="my-2 h-px w-full bg-[#1c2235]" />
 
         <button
           onClick={() => setShowCompareModal(true)}
@@ -721,6 +705,22 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
             <p className="m-0 mt-0.5 text-[11px] text-[#9099ab]">AI-powered diff</p>
           </div>
         </button>
+
+        <div className="my-2 h-px w-full bg-[#1c2235]" />
+        
+        {/* Historical Snapshots */}
+        {snapshots && snapshots.map((snap, idx) => (
+          <TimelineItem
+            key={snap.id}
+            snap={snap}
+            isLatest={idx === 0}
+            active={snap.id === selectedSnapshotId && !showCompareModal}
+            onClick={() => {
+              setSelectedSnapshotId(snap.id);
+              setShowCompareModal(false);
+            }}
+          />
+        ))}
       </div>
 
       {/* ── Main content ── */}
