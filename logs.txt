@@ -1,0 +1,758 @@
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+INFO:     10.224.0.5:50488 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55548 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55562 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41536 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49306 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49314 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48590 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43332 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43340 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:51368 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57884 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57896 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40042 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41768 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41778 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40900 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54124 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54128 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55888 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56322 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56328 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:60994 - "GET /api/status HTTP/1.1" 200 OK
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+Unable to connect to the server: dial tcp: lookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io: no such host
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+Unable to connect to the server: dial tcp: lookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io: no such host
+PS C:\Users\Afzaal Hamzah> ping google.com
+
+Pinging google.com [142.250.202.110] with 32 bytes of data:
+Reply from 142.250.202.110: bytes=32 time=41ms TTL=119
+Reply from 142.250.202.110: bytes=32 time=41ms TTL=119
+
+Ping statistics for 142.250.202.110:
+    Packets: Sent = 2, Received = 2, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 41ms, Maximum = 41ms, Average = 41ms
+Control-C
+PS C:\Users\Afzaal Hamzah> nslookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io 8.8.8.8
+Server:  dns.google
+Address:  8.8.8.8
+
+Non-authoritative answer:
+Name:    podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io
+Address:  4.249.216.122
+
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+INFO:     10.224.0.5:35084 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43412 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:59736 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:59748 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33874 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41054 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41068 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43514 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49136 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49152 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57598 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54968 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54980 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55650 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39652 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39658 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42834 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:58852 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:58862 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40832 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52974 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52980 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52026 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36924 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36938 - "GET /api/status HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     10.224.0.5:53612 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:44942 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:44952 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41036 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48484 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48490 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43670 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55044 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55052 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50848 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43730 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43744 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:38716 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36032 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36034 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48362 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33900 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33904 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:44102 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:46306 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:46320 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:37158 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41167 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41167 - "GET /assets/index-iPhBlokC.js HTTP/1.1" 304 Not Modified
+INFO:     10.224.0.4:20673 - "GET /assets/index-CqWsYCtJ.css HTTP/1.1" 304 Not Modified
+INFO:     10.224.0.5:38626 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41167 - "GET /favicon.svg HTTP/1.1" 200 OK
+INFO:     10.224.0.5:38628 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:37012 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42102 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42114 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54904 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42510 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42512 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:44291 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55932 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43286 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43294 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41932 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42324 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42326 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:46126 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49156 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49158 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39796 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:47920 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:47934 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54498 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50316 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50318 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36360 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:35072 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:35088 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43600 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1]
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+Unable to connect to the server: dial tcp: lookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io: no such host
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+Unable to connect to the server: dial tcp: lookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io: no such host
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+Unable to connect to the server: dial tcp: lookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io: no such host
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+Unable to connect to the server: dial tcp: lookup podpilotcl-podpilot-rg-ebaeb7-3su8bjar.hcp.centralus.azmk8s.io: no such host
+PS C:\Users\Afzaal Hamzah> kubectl logs -f -l app=podpilot -n podpilot
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.5:27757 - "GET /security?snapshot_id=6a5a85a3aca8e94931ba3909 HTTP/1.1" 200 OK
+INFO:     10.224.0.5:58621 - "GET /snapshot?snapshot_id=6a5a85a3aca8e94931ba3909 HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.4:17603 - "GET /reliability?snapshot_id=6a5a85a3aca8e94931ba3909 HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.4:29980 - "GET /cost?snapshot_id=6a5a85a3aca8e94931ba3909 HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41710 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40202 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40204 - "GET /api/status HTTP/1.1" 200 OK
+[snapshot] Using in-cluster ServiceAccount config
+[CACHE INVALIDATION] Structural change detected on refresh! Diff: - deployment/coredns (ns: kube-system) replicas: 1 -> 2
+- deployment/oversized-deployment (ns: podpilot-demo) replicas: 5 -> 1
+- pod/azure-cns-9cqf2 (ns: kube-system) is new
+- pod/azure-cns-f2wcl (ns: kube-system) is new
+- pod/azure-ip-masq-agent-tn6vq (ns: kube-system) is new
+- pod/azure-ip-masq-agent-w7dzq (ns: kube-system) is new
+- pod/cloud-node-manager-5swwv (ns: kube-system) is new
+- pod/cloud-node-manager-z5tmx (ns: kube-system) is new
+- pod/coredns-648978f94d-mjx26 (ns: kube-system) is new
+- pod/coredns-648978f94d-mzm9w (ns: kube-system) is new
+- pod/coredns-autoscaler-77f77644c8-kn67l (ns: kube-system) is new
+- pod/csi-azuredisk-node-shg2k (ns: kube-system) is new
+- pod/csi-azuredisk-node-t8dcf (ns: kube-system) is new
+- pod/csi-azurefile-node-q7cd6 (ns: kube-system) is new
+- pod/csi-azurefile-node-qnmj8 (ns: kube-system) is new
+- pod/konnectivity-agent-85f67ccd95-lv7zp (ns: kube-system) is new
+- pod/konnectivity-agent-85f67ccd95-vblt4 (ns: kube-system) is new
+- pod/konnectivity-agent-autoscaler-6769c6f8db-ss2hp (ns: kube-system) is new
+- pod/kube-proxy-fmt5h (ns: kube-system) is new
+- pod/kube-proxy-xg29j (ns: kube-system) is new
+- pod/metrics-server-8687d58456-6p49r (ns: kube-system) is new
+- pod/metrics-server-8687d58456-ssv5g (ns: kube-system) is new
+- pod/no-limits-deployment-56c4bf454c-z75pj (ns: podpilot-demo) is new
+- pod/oversized-deployment-998dc6964-rt426 (ns: podpilot-demo) is new
+- pod/unpinned-image-deployment-84847bdc8f-vk4t2 (ns: podpilot-demo) is new
+- pod/podpilot-6d5cfc6fbc-hrwvb (ns: podpilot) is new
+- pod/coredns-7d764666f9-cwht9 (ns: kube-system) was removed
+- pod/etcd-minikube (ns: kube-system) was removed
+- pod/kube-apiserver-minikube (ns: kube-system) was removed
+- pod/kube-controller-manager-minikube (ns: kube-system) was removed
+- pod/kube-proxy-xx2zn (ns: kube-system) was removed
+- pod/kube-scheduler-minikube (ns: kube-system) was removed
+- pod/storage-provisioner (ns: kube-system) was removed
+- pod/no-limits-deployment-56c4bf454c-nr9qg (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-5fv7d (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-6xsrn (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-b9t8v (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-mzbr2 (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-xphs6 (ns: podpilot-demo) was removed
+- pod/unpinned-image-deployment-84847bdc8f-pnqqg (ns: podpilot-demo) was removed
+[snapshot] Using in-cluster ServiceAccount config
+[CACHE INVALIDATION] Structural change detected! Diff: - deployment/coredns (ns: kube-system) replicas: 1 -> 2
+- deployment/oversized-deployment (ns: podpilot-demo) replicas: 5 -> 1
+- pod/azure-cns-9cqf2 (ns: kube-system) is new
+- pod/azure-cns-f2wcl (ns: kube-system) is new
+- pod/azure-ip-masq-agent-tn6vq (ns: kube-system) is new
+- pod/azure-ip-masq-agent-w7dzq (ns: kube-system) is new
+- pod/cloud-node-manager-5swwv (ns: kube-system) is new
+- pod/cloud-node-manager-z5tmx (ns: kube-system) is new
+- pod/coredns-648978f94d-mjx26 (ns: kube-system) is new
+- pod/coredns-648978f94d-mzm9w (ns: kube-system) is new
+- pod/coredns-autoscaler-77f77644c8-kn67l (ns: kube-system) is new
+- pod/csi-azuredisk-node-shg2k (ns: kube-system) is new
+- pod/csi-azuredisk-node-t8dcf (ns: kube-system) is new
+- pod/csi-azurefile-node-q7cd6 (ns: kube-system) is new
+- pod/csi-azurefile-node-qnmj8 (ns: kube-system) is new
+- pod/konnectivity-agent-85f67ccd95-lv7zp (ns: kube-system) is new
+- pod/konnectivity-agent-85f67ccd95-vblt4 (ns: kube-system) is new
+- pod/konnectivity-agent-autoscaler-6769c6f8db-ss2hp (ns: kube-system) is new
+- pod/kube-proxy-fmt5h (ns: kube-system) is new
+- pod/kube-proxy-xg29j (ns: kube-system) is new
+- pod/metrics-server-8687d58456-6p49r (ns: kube-system) is new
+- pod/metrics-server-8687d58456-ssv5g (ns: kube-system) is new
+- pod/no-limits-deployment-56c4bf454c-z75pj (ns: podpilot-demo) is new
+- pod/oversized-deployment-998dc6964-rt426 (ns: podpilot-demo) is new
+- pod/unpinned-image-deployment-84847bdc8f-vk4t2 (ns: podpilot-demo) is new
+- pod/podpilot-6d5cfc6fbc-hrwvb (ns: podpilot) is new
+- pod/coredns-7d764666f9-cwht9 (ns: kube-system) was removed
+- pod/etcd-minikube (ns: kube-system) was removed
+- pod/kube-apiserver-minikube (ns: kube-system) was removed
+- pod/kube-controller-manager-minikube (ns: kube-system) was removed
+- pod/kube-proxy-xx2zn (ns: kube-system) was removed
+- pod/kube-scheduler-minikube (ns: kube-system) was removed
+- pod/storage-provisioner (ns: kube-system) was removed
+- pod/no-limits-deployment-56c4bf454c-nr9qg (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-5fv7d (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-6xsrn (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-b9t8v (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-mzbr2 (ns: podpilot-demo) was removed
+- pod/oversized-deployment-998dc6964-xphs6 (ns: podpilot-demo) was removed
+- pod/unpinned-image-deployment-84847bdc8f-pnqqg (ns: podpilot-demo) was removed
+[GROQ REQUEST] Cache miss for 'cost'. Sending request to Groq API...
+[GROQ REQUEST] Cache miss for 'reliability'. Sending request to Groq API...
+[GROQ REQUEST] Cache miss for 'performance'. Sending request to Groq API...
+[GROQ REQUEST] Cache miss for 'storage'. Sending request to Groq API...
+INFO:     10.224.0.5:32656 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.4:23566 - "GET /cost HTTP/1.1" 200 OK
+INFO:     10.224.0.5:19805 - "GET /reliability HTTP/1.1" 200 OK
+INFO:     10.224.0.5:51674 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56734 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40816 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:59520 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:59534 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:60581 - "GET /performance HTTP/1.1" 200 OK
+INFO:     10.224.0.4:23566 - "GET / HTTP/1.1" 200 OK
+[GROQ REQUEST] Cache miss for 'security'. Sending request to Groq API...
+Scanning image 1/17: shazilhamzah/podpilot:latest
+Scanning shazilhamzah/podpilot:latest... (first run may take 1-2 mins)
+Scanning image 2/17: mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6
+Scanning mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6... (first run may take 1-2 mins)
+Scanning image 3/17: mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1
+Scanning mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1... (first run may take 1-2 mins)
+Scanning image 4/17: mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0
+Scanning mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0... (first run may take 1-2 mins)
+Scanning image 5/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16... (first run may take 1-2 mins)
+Scanning image 6/17: mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4
+Scanning mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4... (first run may take 1-2 mins)
+Scanning image 7/17: mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2... (first run may take 1-2 mins)
+Scanning image 8/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4... (first run may take 1-2 mins)
+Scanning image 9/17: mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14
+Scanning mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14... (first run may take 1-2 mins)
+Scanning image 10/17: mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13
+Scanning mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13... (first run may take 1-2 mins)
+Scanning image 11/17: redis:latest
+Scanning redis:latest... (first run may take 1-2 mins)
+Scanning image 12/17: mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7
+Scanning mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7... (first run may take 1-2 mins)
+Scanning image 13/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4... (first run may take 1-2 mins)
+Scanning image 14/17: nginx:this-image-does-not-exist
+Scanning nginx:this-image-does-not-exist... (first run may take 1-2 mins)
+Scanning image 15/17: nginx:1.25
+Skipping nginx:1.25 (already in global cache)
+Scanning image 16/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18... (first run may take 1-2 mins)
+Scanning image 17/17: mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0... (first run may take 1-2 mins)
+INFO:     10.224.0.5:39763 - "POST /refresh HTTP/1.1" 200 OK
+INFO:     10.224.0.5:46999 - "GET /storage HTTP/1.1" 200 OK
+INFO:     10.224.0.4:60581 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49390 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49406 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:23566 - "GET /assets/index-CtpIDZhw.js HTTP/1.1" 304 Not Modified
+INFO:     10.224.0.5:55818 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:23566 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:20761 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.5:62821 - "GET /cost HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.4:33074 - "GET /storage HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.4:41010 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.5:13303 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.4:23566 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.4:20761 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.4:20761 - "GET /snapshot?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[GROQ REQUEST] Historical miss for 'cost'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'performance'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'storage'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'security'. Sending request to Groq API...
+Scanning image 1/17: shazilhamzah/podpilot:latest
+Scanning shazilhamzah/podpilot:latest... (first run may take 1-2 mins)
+Scanning image 2/17: mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6
+Scanning mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6... (first run may take 1-2 mins)
+Scanning image 3/17: mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1
+Scanning mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1... (first run may take 1-2 mins)
+Scanning image 4/17: mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0
+Scanning mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0... (first run may take 1-2 mins)
+Scanning image 5/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16... (first run may take 1-2 mins)
+Scanning image 6/17: mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4
+Scanning mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4... (first run may take 1-2 mins)
+Scanning image 7/17: mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2... (first run may take 1-2 mins)
+Scanning image 8/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4... (first run may take 1-2 mins)
+Scanning image 9/17: mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14
+Scanning mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14... (first run may take 1-2 mins)
+Scanning image 10/17: mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13
+Scanning mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13... (first run may take 1-2 mins)
+Scanning image 11/17: redis:latest
+Scanning redis:latest... (first run may take 1-2 mins)
+Scanning image 12/17: mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7
+Scanning mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7... (first run may take 1-2 mins)
+Scanning image 13/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4... (first run may take 1-2 mins)
+Scanning image 14/17: nginx:this-image-does-not-exist
+Scanning nginx:this-image-does-not-exist... (first run may take 1-2 mins)
+Scanning image 15/17: nginx:1.25
+Skipping nginx:1.25 (already in global cache)
+Scanning image 16/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18... (first run may take 1-2 mins)
+Scanning image 17/17: mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0... (first run may take 1-2 mins)
+[GROQ REQUEST] Historical miss for 'reliability'. Sending request to Groq API...
+INFO:     10.224.0.4:23566 - "GET /cost?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.4:33074 - "GET /performance?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.4:41010 - "GET /storage?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:62821 - "GET /security?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57630 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57634 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:38502 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:38518 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36820 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36830 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:23566 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.5:13303 - "GET /reliability?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+[DB HIT] Serving historical 'cost' from db.snapshots.
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.5:62646 - "GET /assets/index-CtpIDZhw.js HTTP/1.1" 304 Not Modified
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.5:62646 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.5:31868 - "GET /cost HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.5:49770 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.4:6930 - "GET /storage HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:5839 - "GET /security HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.5:47265 - "GET /reliability HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49770 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:31868 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.5:31868 - "GET /snapshot?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.5:62646 - "GET /security?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.5:49770 - "GET /cost?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.4:5839 - "GET /performance?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.4:6930 - "GET /storage?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:31868 - "GET /snapshot?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.5:47265 - "GET /reliability?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:36642 - "GET /api/status HTTP/1.1" 200 OK
+[GROQ REQUEST] Historical miss for 'drift'. Sending async request...
+INFO:     10.224.0.5:47265 - "GET /drift?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39768 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39770 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49164 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55980 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55990 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50698 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57244 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57250 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45082 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:37930 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:37940 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:24651 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.5:24651 - "GET /assets/index-CtpIDZhw.js HTTP/1.1" 304 Not Modified
+INFO:     10.224.0.5:24651 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.5:50605 - "GET /cost HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:5768 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:12256 - "GET /security HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.5:2040 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.4:17149 - "GET /storage HTTP/1.1" 200 OK
+INFO:     10.224.0.5:24651 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50605 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50605 - "GET /snapshot?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.5:24651 - "GET /cost?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.4:17149 - "GET /storage?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.4:5768 - "GET /security?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.5:2040 - "GET /performance?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.4:12256 - "GET /reliability?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50605 - "GET /snapshot?snapshot_id=6a5a899658a80f420e1eea9c HTTP/1.1" 200 OK
+INFO:     10.224.0.5:34726 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43832 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43848 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40966 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45542 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45556 - "GET /api/status HTTP/1.1" 200 OK
+[snapshot] Using in-cluster ServiceAccount config
+[CACHE] Metrics updated, structure unchanged — keeping analysis cache on refresh.
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.4:17223 - "GET /cost HTTP/1.1" 200 OK
+INFO:     10.224.0.5:63119 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:5316 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.5:63831 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.5:36720 - "GET /storage HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:17223 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.4:5316 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "POST /refresh HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49120 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /snapshot?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.5:63831 - "GET /security?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.4:17223 - "GET /reliability?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.5:63119 - "GET /performance?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.4:5316 - "GET /cost?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.5:36720 - "GET /storage?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /snapshot?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /assets/index-CtpIDZhw.js HTTP/1.1" 304 Not Modified
+INFO:     10.224.0.5:52738 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:17223 - "GET /security HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:5316 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.5:63119 - "GET /storage HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.5:63831 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.5:36720 - "GET /cost HTTP/1.1" 200 OK
+INFO:     10.224.0.5:63119 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /snapshot?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.5:36720 - "GET /reliability?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.5:63831 - "GET /performance?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.5:63119 - "GET /cost?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.4:5316 - "GET /storage?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.4:17223 - "GET /security?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52738 - "GET /snapshot?snapshot_id=6a5a8aa058a80f420e1eea9d HTTP/1.1" 200 OK
+INFO:     10.224.0.5:34696 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:34698 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56688 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50816 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50832 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:60998 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45940 - "GET /api/status HTTP/1.1" 200 OK
+[snapshot] Using in-cluster ServiceAccount config
+[CACHE] Metrics updated, structure unchanged — keeping analysis cache on refresh.
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.4:57114 - "GET /cost HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40422 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:44362 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.4:57956 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.5:48648 - "GET /storage HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45942 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:57114 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:44362 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46621 - "POST /refresh HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46621 - "GET /history HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.4:57114 - "GET /cost?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.5:48648 - "GET /security?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.4:57956 - "GET /storage?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.4:44362 - "GET /reliability?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.5:40422 - "GET /performance?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46621 - "GET /snapshot?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+INFO:     10.224.0.4:44362 - "GET /snapshot?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+INFO:     10.224.0.4:44362 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.4:44362 - "GET /assets/index-CtpIDZhw.js HTTP/1.1" 304 Not Modified
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:57114 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.4:44362 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.5:48648 - "GET /storage HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:57956 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.4:46621 - "GET /cost HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.5:40422 - "GET /performance HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40422 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46621 - "GET /history HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.4:57114 - "GET /security?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.4:44362 - "GET /reliability?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.5:40422 - "GET /cost?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+INFO:     10.224.0.4:46621 - "GET /snapshot?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.5:48648 - "GET /storage?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.4:57956 - "GET /performance?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+INFO:     10.224.0.4:44362 - "GET /snapshot?snapshot_id=6a5a8ad358a80f420e1eea9e HTTP/1.1" 200 OK
+INFO:     10.224.0.5:47718 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39080 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39082 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41134 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40568 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:40580 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48956 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45264 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45268 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39578 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33352 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33364 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:54608 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52766 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52778 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:59662 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52760 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52764 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33112 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52482 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:52492 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:34490 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:47316 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:47320 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49626 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48924 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:48928 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49882 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43832 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43840 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:53848 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42920 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:42924 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:47290 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45552 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:45554 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33016 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:51122 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:51138 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:37561 - "GET /snapshot HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.4:35910 - "GET /cost HTTP/1.1" 200 OK
+[snapshot] Using in-cluster ServiceAccount config
+[CACHE INVALIDATION] Structural change detected on refresh! Diff: - pod/unschedulable-pod (ns: podpilot-demo) is new
+[GROQ REQUEST] Cache miss for 'security'. Sending request to Groq API...
+Scanning image 1/17: shazilhamzah/podpilot:latest
+Scanning shazilhamzah/podpilot:latest... (first run may take 1-2 mins)
+Scanning image 2/17: mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6
+Scanning mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6... (first run may take 1-2 mins)
+Scanning image 3/17: mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1
+Scanning mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1... (first run may take 1-2 mins)
+Scanning image 4/17: mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0
+Scanning mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0... (first run may take 1-2 mins)
+Scanning image 5/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16... (first run may take 1-2 mins)
+Scanning image 6/17: mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4
+Scanning mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4... (first run may take 1-2 mins)
+Scanning image 7/17: mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2... (first run may take 1-2 mins)
+Scanning image 8/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4... (first run may take 1-2 mins)
+Scanning image 9/17: mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14
+Scanning mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14... (first run may take 1-2 mins)
+Scanning image 10/17: mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13
+Scanning mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13... (first run may take 1-2 mins)
+Scanning image 11/17: redis:latest
+Scanning redis:latest... (first run may take 1-2 mins)
+Scanning image 12/17: mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7
+Scanning mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7... (first run may take 1-2 mins)
+Scanning image 13/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4... (first run may take 1-2 mins)
+Scanning image 14/17: nginx:this-image-does-not-exist
+Scanning nginx:this-image-does-not-exist... (first run may take 1-2 mins)
+Scanning image 15/17: nginx:1.25
+Skipping nginx:1.25 (already in global cache)
+Scanning image 16/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18... (first run may take 1-2 mins)
+Scanning image 17/17: mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0... (first run may take 1-2 mins)
+INFO:     10.224.0.5:37561 - "GET /snapshot HTTP/1.1" 200 OK
+[GROQ REQUEST] Cache miss for 'reliability'. Sending request to Groq API...
+[GROQ REQUEST] Cache miss for 'performance'. Sending request to Groq API...
+[GROQ REQUEST] Cache miss for 'storage'. Sending request to Groq API...
+INFO:     10.224.0.5:31652 - "POST /refresh HTTP/1.1" 200 OK
+INFO:     10.224.0.4:35910 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.4:6885 - "GET /reliability HTTP/1.1" 200 OK
+INFO:     10.224.0.5:34232 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:41920 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56680 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56688 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:60029 - "GET /performance HTTP/1.1" 200 OK
+INFO:     10.224.0.4:16573 - "GET /storage HTTP/1.1" 200 OK
+INFO:     10.224.0.4:6885 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.4:6885 - "GET /snapshot?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+[GROQ REQUEST] Historical miss for 'performance'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'reliability'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'cost'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'storage'. Sending request to Groq API...
+[GROQ REQUEST] Historical miss for 'security'. Sending request to Groq API...
+Scanning image 1/17: shazilhamzah/podpilot:latest
+Scanning shazilhamzah/podpilot:latest... (first run may take 1-2 mins)
+Scanning image 2/17: mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6
+Scanning mcr.microsoft.com/oss/v2/azure/ip-masq-agent-v2:v0.1.16-6... (first run may take 1-2 mins)
+Scanning image 3/17: mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1
+Scanning mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.35.6-1... (first run may take 1-2 mins)
+Scanning image 4/17: mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0
+Scanning mcr.microsoft.com/containernetworking/azure-cns:v1.8.6-0... (first run may take 1-2 mins)
+Scanning image 5/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/cluster-proportional-autoscaler:v1.9.0-16... (first run may take 1-2 mins)
+Scanning image 6/17: mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4
+Scanning mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.35.5-4... (first run may take 1-2 mins)
+Scanning image 7/17: mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0-2... (first run may take 1-2 mins)
+Scanning image 8/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4... (first run may take 1-2 mins)
+Scanning image 9/17: mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14
+Scanning mcr.microsoft.com/oss/v2/kubernetes/metrics-server:v0.8.0-14... (first run may take 1-2 mins)
+Scanning image 10/17: mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13
+Scanning mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.13.1-13... (first run may take 1-2 mins)
+Scanning image 11/17: redis:latest
+Scanning redis:latest... (first run may take 1-2 mins)
+Scanning image 12/17: mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7
+Scanning mcr.microsoft.com/oss/v2/kubernetes/apiserver-network-proxy/agent:v0.32.1-7... (first run may take 1-2 mins)
+Scanning image 13/17: mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.35.4... (first run may take 1-2 mins)
+Scanning image 14/17: nginx:this-image-does-not-exist
+Scanning nginx:this-image-does-not-exist... (first run may take 1-2 mins)
+Scanning image 15/17: nginx:1.25
+Skipping nginx:1.25 (already in global cache)
+Scanning image 16/17: mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18
+Scanning mcr.microsoft.com/oss/v2/kubernetes/autoscaler/addon-resizer:v1.8.23-18... (first run may take 1-2 mins)
+Scanning image 17/17: mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0
+Scanning mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0... (first run may take 1-2 mins)
+INFO:     10.224.0.4:35910 - "GET /performance?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.4:60029 - "GET /reliability?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.4:16573 - "GET /cost?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.5:31652 - "GET /storage?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56696 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:49598 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39822 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:55612 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:46160 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43722 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:43730 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:5069 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.5:5069 - "GET /assets/index-CtpIDZhw.js HTTP/1.1" 304 Not Modified
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+[DB HIT] Serving historical 'cost' from db.snapshots.
+[DB HIT] Serving historical 'storage' from db.snapshots.
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.5:5069 - "GET /assets/index-CqWsYCtJ.css HTTP/1.1" 200 OK
+INFO:     10.224.0.5:5069 - "GET /snapshot HTTP/1.1" 200 OK
+[GROQ REQUEST] Cache miss for 'cost'. Sending request to Groq API...
+[DB HIT] Serving historical 'security' from db.snapshots.
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.5:5069 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.4:18308 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.4:4587 - "GET /storage HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:38343 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.5:60968 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39956 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:34004 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:5069 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.4:18308 - "GET / HTTP/1.1" 200 OK
+INFO:     10.224.0.4:4587 - "GET /favicon.svg HTTP/1.1" 200 OK
+INFO:     10.224.0.5:60106 - "GET /cost HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'cost' from cache.
+INFO:     10.224.0.5:5069 - "GET /cost HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'performance' from cache.
+INFO:     10.224.0.4:18308 - "GET /performance HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'reliability' from cache.
+INFO:     10.224.0.4:4587 - "GET /reliability HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'storage' from cache.
+INFO:     10.224.0.4:38343 - "GET /storage HTTP/1.1" 200 OK
+INFO:     10.224.0.5:60106 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:8785 - "GET /history HTTP/1.1" 200 OK
+[CACHE HIT] Serving 'security' from cache.
+INFO:     10.224.0.4:18308 - "GET /security HTTP/1.1" 200 OK
+INFO:     10.224.0.4:38343 - "GET /snapshot HTTP/1.1" 200 OK
+INFO:     10.224.0.5:5069 - "GET /history HTTP/1.1" 200 OK
+INFO:     10.224.0.5:5069 - "GET /snapshot?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'security' from db.snapshots.
+INFO:     10.224.0.4:4587 - "GET /security?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'performance' from db.snapshots.
+INFO:     10.224.0.4:18308 - "GET /performance?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'storage' from db.snapshots.
+INFO:     10.224.0.5:8785 - "GET /storage?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'cost' from db.snapshots.
+INFO:     10.224.0.4:38343 - "GET /cost?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+[DB HIT] Serving historical 'reliability' from db.snapshots.
+INFO:     10.224.0.5:60106 - "GET /reliability?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.4:18308 - "GET /snapshot?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.5:50286 - "GET /api/status HTTP/1.1" 200 OK
+[GROQ REQUEST] Historical miss for 'drift'. Sending async request...
+INFO:     10.224.0.5:50292 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.4:18308 - "GET /drift?snapshot_id=6a5a8bde58a80f420e1eea9f HTTP/1.1" 200 OK
+INFO:     10.224.0.5:33852 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39196 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:39210 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:56270 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:35164 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:35176 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:32900 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57404 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     10.224.0.5:57412 - "GET /api/status HTTP/1.1" 200 OK

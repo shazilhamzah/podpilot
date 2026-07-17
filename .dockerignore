@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environment
+backend/venv/
+venv/
+
+# Dev secrets (NEVER bake into image)
+backend/.env
+.env
+
+# Big dev-only binaries
+backend/kubectl
+backend/minikube-linux-amd64
+backend/get-docker.sh
+
+# Test files
+backend/test_*.py
+backend/.pytest_cache/
+backend/snapshots/
+
+# Logs
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Node (frontend is built in stage 1, not needed in final image context)
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/

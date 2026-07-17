@@ -94,18 +94,26 @@ def snapshot():
               (nodes, pods, deployments, services, pvcs) and actual metrics.
     """
     try:
-        config.load_kube_config()
-    except Exception as e:
-        print(f"Error loading kube config: {e}")
-        return {}
+        # Try in-cluster config first (running inside K8s pod with ServiceAccount)
+        config.load_incluster_config()
+        cluster_name = os.environ.get("CLUSTER_NAME", "kubernetes")
+        print("[snapshot] Using in-cluster ServiceAccount config")
+    except config.ConfigException:
+        # Fall back to local kubeconfig (local dev / minikube)
+        try:
+            config.load_kube_config()
+            cluster_name = "minikube"
+        except Exception as e:
+            print(f"Error loading kube config: {e}")
+            return {}
 
     core_v1 = client.CoreV1Api()
     apps_v1 = client.AppsV1Api()
     custom_api = client.CustomObjectsApi()
 
     captured_at = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
-    cluster_name = "minikube"
 
+    # Refine cluster name from local kubeconfig context if available
     try:
         contexts, active_context = config.list_kube_config_contexts()
         if active_context and 'cluster' in active_context.get('context', {}):

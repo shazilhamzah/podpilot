@@ -2,8 +2,11 @@ import os
 import time
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -20,7 +23,7 @@ from health import (
     analyze_security,
     chat_with_cluster
 )
-from trivy import scan_all_images, trivy_ai_summary, trivy_to_issues
+from trivy import scan_all_images, trivy_ai_summary, trivy_to_issues, warm_trivy_cache
 from drift_detection import (
     save_snapshot,
     load_last_two_snapshots,
@@ -252,8 +255,10 @@ async def startup_event():
         print(f"Cache ready — {len(snap.get('pods', []))} pods loaded")
     except Exception as e:
         print(f"Failed to pre-warm cache: {e}")
+    print("Pre-warming Trivy image scan cache from MongoDB...")
+    await warm_trivy_cache()
 
-@app.get("/")
+@app.get("/api/status")
 async def root():
     try:
         return {
@@ -262,7 +267,7 @@ async def root():
             "version": "1.0.0"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/"})
+        raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/api/status"})
 
 @app.get("/snapshot")
 async def get_snapshot(snapshot_id: Optional[str] = None):
@@ -390,24 +395,24 @@ async def storage(snapshot_id: Optional[str] = None):
 @app.get("/security")
 async def security(snapshot_id: Optional[str] = None):
     try:
-        def compute_security(snap):
+        async def compute_security(snap):
             existing_result = analyze_security(snap)
-            trivy_result = scan_all_images(snap)
+            trivy_result = await scan_all_images(snap)
             trivy_issues = trivy_to_issues(trivy_result)
-            
+
             # merge trivy issues into existing security issues
             existing_result["issues"] = existing_result.get("issues", []) + trivy_issues
             return existing_result
-        return await get_cached_analysis("security", compute_security, snapshot_id)
+        return await get_cached_analysis_async("security", compute_security, snapshot_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/security"})
 
 @app.get("/trivy")
 async def trivy_scan(snapshot_id: Optional[str] = None):
-    # WARNING: This endpoint is SLOW (1-3 minutes on first call due to Trivy DB download).
+    # First call may be slow if images are not yet cached in MongoDB.
     try:
-        def compute_trivy(snap):
-            scan_results = scan_all_images(snap)
+        async def compute_trivy(snap):
+            scan_results = await scan_all_images(snap)
             ai_summary = trivy_ai_summary(scan_results)
             issues = trivy_to_issues(scan_results)
             return {
@@ -415,7 +420,7 @@ async def trivy_scan(snapshot_id: Optional[str] = None):
                 "ai_summary": ai_summary,
                 "issues": issues
             }
-        return await get_cached_analysis("trivy", compute_trivy, snapshot_id)
+        return await get_cached_analysis_async("trivy", compute_trivy, snapshot_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/trivy"})
 
@@ -538,3 +543,23 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/refresh"})
+
+# ---------------------------------------------------------------------------
+# Frontend Static Files (single-image Docker mode)
+# Set SERVE_FRONTEND=true to enable. The Dockerfile builds React into ./static
+# ---------------------------------------------------------------------------
+_STATIC_DIR = Path(__file__).parent / "static"
+if os.getenv("SERVE_FRONTEND", "false").lower() == "true" and _STATIC_DIR.exists():
+    # Serve /assets/* (JS/CSS bundles) from static/assets/
+    _assets_dir = _STATIC_DIR / "assets"
+    if _assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
+        """Catch-all: serve React index.html for any unknown path (SPA routing)."""
+        index = _STATIC_DIR / "index.html"
+        if index.exists():
+            return FileResponse(str(index))
+        raise HTTPException(status_code=404, detail="Frontend not found")
+

@@ -1,0 +1,191 @@
+# =============================================================================
+# PodPilot — Kubernetes All-in-One Manifest
+# =============================================================================
+# Usage:
+#   1. Fill in YOUR API keys in the Secret below
+#   2. kubectl apply -f podpilot.yaml
+#   3. kubectl get svc -n podpilot podpilot   (get the EXTERNAL-IP / NodePort)
+#
+# Works on: AKS, EKS, GKE, minikube, k3s — any standard Kubernetes cluster.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Namespace
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: podpilot
+  labels:
+    app.kubernetes.io/name: podpilot
+
+---
+# -----------------------------------------------------------------------------
+# 2. Secret — fill in your own values before applying
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: podpilot-secrets
+  namespace: podpilot
+type: Opaque
+stringData:
+  GEMINI_API_KEY: "REPLACE_WITH_YOUR_GEMINI_API_KEY"
+  GROQ_API_KEY: "REPLACE_WITH_YOUR_GROQ_API_KEY"
+  MODEL: "llama-3.1-8b-instant"
+  MONGO_DB_URI: "REPLACE_WITH_YOUR_MONGODB_ATLAS_URI"
+  # Optional: give the cluster a friendly display name in PodPilot UI
+  CLUSTER_NAME: "my-cluster"
+
+---
+# -----------------------------------------------------------------------------
+# 3. ServiceAccount — identity for the PodPilot pod
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: podpilot
+  namespace: podpilot
+  labels:
+    app.kubernetes.io/name: podpilot
+
+---
+# -----------------------------------------------------------------------------
+# 4. ClusterRole — read-only access to cluster resources
+#    PodPilot only needs GET/LIST/WATCH — never modifies anything.
+# -----------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podpilot-reader
+  labels:
+    app.kubernetes.io/name: podpilot
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - services
+      - namespaces
+      - persistentvolumeclaims
+      - events
+      - resourcequotas
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources:
+      - pods
+      - nodes
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["get", "list", "watch"]
+
+---
+# -----------------------------------------------------------------------------
+# 5. ClusterRoleBinding — bind ServiceAccount to the ClusterRole
+# -----------------------------------------------------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: podpilot-reader-binding
+  labels:
+    app.kubernetes.io/name: podpilot
+subjects:
+  - kind: ServiceAccount
+    name: podpilot
+    namespace: podpilot
+roleRef:
+  kind: ClusterRole
+  name: podpilot-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# -----------------------------------------------------------------------------
+# 6. Deployment — runs the single PodPilot container (frontend + backend)
+# -----------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podpilot
+  namespace: podpilot
+  labels:
+    app.kubernetes.io/name: podpilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podpilot
+  template:
+    metadata:
+      labels:
+        app: podpilot
+        app.kubernetes.io/name: podpilot
+    spec:
+      serviceAccountName: podpilot
+      containers:
+        - name: podpilot
+          image: shazilhamzah/podpilot:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - secretRef:
+                name: podpilot-secrets
+          env:
+            - name: SERVE_FRONTEND
+              value: "true"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 30
+
+---
+# -----------------------------------------------------------------------------
+# 7. Service — exposes PodPilot externally
+#    AKS / EKS / GKE: type LoadBalancer gives you a public IP automatically.
+#    minikube:         run `minikube service podpilot -n podpilot` to open.
+#    k3s / bare-metal: change type to NodePort.
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: podpilot
+  namespace: podpilot
+  labels:
+    app.kubernetes.io/name: podpilot
+spec:
+  type: LoadBalancer
+  selector:
+    app: podpilot
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP

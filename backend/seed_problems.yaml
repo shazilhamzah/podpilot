@@ -6,7 +6,7 @@ metadata:
     app: podpilot-demo
 
 ---
-# PROBLEM 1 - CRASH LOOPING POD
+# PROBLEM 1 - CRASH LOOPING POD (1 pod)
 apiVersion: v1
 kind: Pod
 metadata:
@@ -25,35 +25,14 @@ spec:
         memory: 128Mi
 
 ---
-# PROBLEM 2 - DEPLOYMENT WITH NO RESOURCE LIMITS
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: no-limits-deployment
-  namespace: podpilot-demo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: no-limits
-  template:
-    metadata:
-      labels:
-        app: no-limits
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.25
-
----
-# PROBLEM 3 - OVERSIZED DEPLOYMENT
+# PROBLEM 2 - OVERSIZED DEPLOYMENT (1 pod)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oversized-deployment
   namespace: podpilot-demo
 spec:
-  replicas: 5
+  replicas: 1
   selector:
     matchLabels:
       app: oversized
@@ -74,67 +53,23 @@ spec:
             memory: 1Gi
 
 ---
-# PROBLEM 4 - UNATTACHED PVC
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: orphan-pvc
-  namespace: podpilot-demo
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: standard
-  resources:
-    requests:
-      storage: 1Gi
-
----
-# PROBLEM 5 - NODEPORT SERVICE FIXED
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend-web
-  namespace: podpilot-demo
-spec:
-  type: ClusterIP
-  selector:
-    # Targets the no-limits-deployment
-    app: no-limits
-  ports:
-    - port: 80
-      targetPort: 80
-
----
-# PROBLEM 6 - UNPINNED IMAGE TAG
+# PROBLEM 3 - DEPLOYMENT WITH NO RESOURCE LIMITS (1 pod)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: unpinned-image-deployment
+  name: no-limits-deployment
   namespace: podpilot-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: unpinned
+      app: no-limits
   template:
     metadata:
       labels:
-        app: unpinned
+        app: no-limits
     spec:
       containers:
-      - name: redis
-        image: redis:latest
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 200m
-            memory: 256Mi
-
-# VERIFICATION COMMANDS:
-# kubectl apply -f seed_problems.yaml
-# kubectl get all -n podpilot-demo
-# kubectl get pvc -n podpilot-demo
-# kubectl describe pod crash-loop-pod -n podpilot-demo
-# kubectl top pods -n podpilot-demo
+      - name: nginx
+        image: nginx:1.25
+        # Notice there is no 'resources' block here, triggering a warning in PodPilot!
