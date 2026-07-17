@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cachedFetch } from "../utils/fetchCache";
 import {
   GitCompareArrows,
@@ -367,7 +369,9 @@ function AiExplanation({ explanation }) {
                     {block.heading}
                   </p>
                 )}
-                <p className="m-0 text-[13px] leading-relaxed text-[#9099ab]">{block.body}</p>
+                <div className="markdown-body text-[13px] leading-relaxed text-[#9099ab]">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{block.body}</ReactMarkdown>
+                </div>
               </div>
             ))}
           </div>
@@ -547,36 +551,36 @@ function CompareSnapshotsView({ onClose, snapshots }) {
             <NoDrift />
           ) : (
             <>
-              <div className="flex flex-col gap-5">
-            {["critical", "warning", "info"].map((sev) => {
-              const group = changes.filter((c) => c.severity === sev);
-              if (!group.length) return null;
-              const sevCfg = SEV[sev];
-              return (
-                <div key={sev}>
-                  <p
-                    className="m-0 mb-3 text-[11.5px] font-semibold uppercase tracking-wider"
-                    style={{ color: sevCfg.color }}
-                  >
-                    {sevCfg.label}
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {group.map((change, i) => (
-                      <ChangeCard key={i} change={change} />
-                    ))}
-                  </div>
+              <div className="rounded-xl border border-[#4f6df5]/20 bg-[#4f6df5]/5 p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles size={16} className="text-[#4f6df5]" />
+                  <span className="text-[14px] font-bold text-[#e7e9ee]">AI Analysis</span>
                 </div>
-              );
-            })}
-          </div>
+                <AiExplanation explanation={result?.ai_explanation} />
+              </div>
 
-          <div className="rounded-xl border border-[#4f6df5]/20 bg-[#4f6df5]/5 p-5">
-            <div className="mb-3 flex items-center gap-2">
-              <Sparkles size={16} className="text-[#4f6df5]" />
-              <span className="text-[14px] font-bold text-[#e7e9ee]">AI Analysis</span>
-            </div>
-            <AiExplanation explanation={result?.ai_explanation} />
-          </div>
+              <div className="flex flex-col gap-5">
+                {["critical", "warning", "info"].map((sev) => {
+                  const group = changes.filter((c) => c.severity === sev);
+                  if (!group.length) return null;
+                  const sevCfg = SEV[sev];
+                  return (
+                    <div key={sev}>
+                      <p
+                        className="m-0 mb-3 text-[11.5px] font-semibold uppercase tracking-wider"
+                        style={{ color: sevCfg.color }}
+                      >
+                        {sevCfg.label}
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {group.map((change, i) => (
+                          <ChangeCard key={i} change={change} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </>
           )}
 
@@ -774,6 +778,9 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
               ) : (
                 <div className="flex flex-col gap-6">
 
+                  {/* ── AI explanation ── */}
+                  <AiExplanation explanation={result.ai_explanation} />
+
                   {/* ── Change summary header ── */}
                   <div className="flex items-center justify-between">
                     <p className="m-0 text-[12px] font-semibold uppercase tracking-wider text-[#9099ab]">
@@ -815,9 +822,6 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
                       </div>
                     );
                   })}
-
-                  {/* ── AI explanation ── */}
-                  <AiExplanation explanation={result.ai_explanation} />
 
                   {/* ── Raw diff summary (collapsible) ── */}
                   <RawDiff summary={result.diff_summary} />
