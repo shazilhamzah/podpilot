@@ -36,6 +36,8 @@ export default function Header({
   selectedSnapshotId,
   setSelectedSnapshotId,
   onSnapshotCreated,
+  hideSystemK8s,
+  setHideSystemK8s,
 }) {
   const tabRefs = useRef({});
   const dropdownRef = useRef(null);
@@ -264,6 +266,24 @@ export default function Header({
 
         {/* Right-side controls */}
         <div className="relative z-10 ml-auto flex items-center gap-4">
+          {/* Hide System K8s Toggle */}
+          <label className="flex items-center gap-2 cursor-pointer mr-2">
+            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-[#9099ab]">
+              Hide System
+            </span>
+            <div 
+              className={`relative inline-flex h-[20px] w-[36px] items-center rounded-full transition-colors ${hideSystemK8s ? 'bg-[#4f6df5]' : 'bg-[#1c2235] border border-[#2a2e40]'}`}
+              onClick={(e) => {
+                e.preventDefault();
+                setHideSystemK8s(!hideSystemK8s);
+              }}
+            >
+              <span 
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${hideSystemK8s ? 'translate-x-[18px]' : 'translate-x-[4px]'}`} 
+              />
+            </div>
+          </label>
+
           {/* Separate Impact Report button */}
           <button
             type="button"

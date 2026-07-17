@@ -107,7 +107,7 @@ function LoadingPulse() {
   );
 }
 
-export default function Sidebar({ selectedSnapshotId, activeTab }) {
+export default function Sidebar({ selectedSnapshotId, activeTab, hideSystemK8s }) {
   const [snapshot, setSnapshot] = useState(null);
   const [categoryData, setCategoryData] = useState({});  // { cost: {issues,summary}, ... }
   const [loading, setLoading] = useState(true);
@@ -154,26 +154,44 @@ export default function Sidebar({ selectedSnapshotId, activeTab }) {
   }, [selectedSnapshotId]);
 
   const snapData = snapshot?.data || {};
-  const totalPods = (snapData.pods || []).length;
+  
+  const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
+  
+  const filteredPods = hideSystemK8s 
+    ? (snapData.pods || []).filter(p => !SYSTEM_NAMESPACES.includes(p.namespace))
+    : (snapData.pods || []);
+    
+  const totalPods = filteredPods.length;
   const totalNodes = (snapData.nodes || []).length;
 
-  const costSummary = snapData.cost_summary || {};
-  const estimatedCost = (costSummary.total_cost_per_hour || 0) * 730;
-  const wastedCost = costSummary.total_wasted_per_month || 0;
+  let estimatedCost = 0;
+  let wastedCost = 0;
+  
+  if (hideSystemK8s) {
+    filteredPods.forEach(p => {
+      estimatedCost += ((p.cost_per_hour || 0) * 730);
+      wastedCost += (p.wasted_cost_per_month || 0);
+    });
+  } else {
+    const costSummary = snapData.cost_summary || {};
+    estimatedCost = (costSummary.total_cost_per_hour || 0) * 730;
+    wastedCost = costSummary.total_wasted_per_month || 0;
+  }
 
   // Build a flat list of all issues from per-category endpoints, tagged with category
   const allAlerts = CATEGORIES.flatMap(cat => {
     const key = cat.toLowerCase();
     const issues = categoryData[key]?.issues || [];
     return issues.map(issue => ({ ...issue, category: key }));
-  });
+  }).filter(a => !hideSystemK8s || !a.namespace || !SYSTEM_NAMESPACES.includes(a.namespace));
+  
   const criticalIssuesCount = allAlerts.filter(a => a.severity === "critical").length;
   const categorySummaries = Object.fromEntries(
     CATEGORIES.map(cat => [cat.toLowerCase(), categoryData[cat.toLowerCase()]?.summary || ""])
   );
 
   // Count issues per category for badge display
-  const countByCategory = (cat) => (categoryData[cat.toLowerCase()]?.issues || []).length;
+  const countByCategory = (cat) => allAlerts.filter(a => a.category === cat.toLowerCase()).length;
 
   // Filtered alerts for the active category
   const activeCategoryKey = activeCategory.toLowerCase();

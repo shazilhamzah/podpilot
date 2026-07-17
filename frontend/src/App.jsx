@@ -11,6 +11,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState("Chat")
   const [snapshots, setSnapshots] = useState([])
   const [selectedSnapshotId, setSelectedSnapshotId] = useState("")
+  const [hideSystemK8s, setHideSystemK8s] = useState(true)
 
   async function fetchHistory(selectLatest = false) {
     try {
@@ -51,20 +52,21 @@ const App = () => {
   function renderMain() {
     switch (activeTab) {
       case "Cost Breakdown":
-        return <CostBreakdown selectedSnapshotId={selectedSnapshotId} />
+        return <CostBreakdown selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />
       case "Drift Detection":
         return (
           <DriftDetection 
             snapshots={snapshots} 
             selectedSnapshotId={selectedSnapshotId} 
             setSelectedSnapshotId={setSelectedSnapshotId} 
+            hideSystemK8s={hideSystemK8s}
           />
         )
       case "Security":
-        return <Security selectedSnapshotId={selectedSnapshotId} snapshots={snapshots} />
+        return <Security selectedSnapshotId={selectedSnapshotId} snapshots={snapshots} hideSystemK8s={hideSystemK8s} />
       case "Chat":
       default:
-        return <Chat key={selectedSnapshotId} selectedSnapshotId={selectedSnapshotId} />
+        return <Chat key={selectedSnapshotId} selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />
     }
   }
 
@@ -77,9 +79,11 @@ const App = () => {
         selectedSnapshotId={selectedSnapshotId}
         setSelectedSnapshotId={setSelectedSnapshotId}
         onSnapshotCreated={() => fetchHistory(true)}
+        hideSystemK8s={hideSystemK8s}
+        setHideSystemK8s={setHideSystemK8s}
       />
       <div className="flex flex-1 min-h-0">
-        <Sidebar selectedSnapshotId={selectedSnapshotId} activeTab={activeTab} />
+        <Sidebar selectedSnapshotId={selectedSnapshotId} activeTab={activeTab} hideSystemK8s={hideSystemK8s} />
         <main className="main-content flex-1 min-w-0 flex flex-col">
           {renderMain()}
         </main>

@@ -404,7 +404,7 @@ function NamespaceGroup({ group, totalClusterCost }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-export default function CostBreakdown({ selectedSnapshotId }) {
+export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
   const [snap, setSnap] = useState(null);
   const [error, setError] = useState(null);
 
@@ -446,13 +446,19 @@ export default function CostBreakdown({ selectedSnapshotId }) {
     </div>
   );
 
-  const costSummary = snap.cost_summary || {};
-  const cluster_cost_per_hour = costSummary.total_cost_per_hour || 0;
-  const cluster_cost_per_month = cluster_cost_per_hour * 730;
-  const cluster_wasted_cost_per_month = costSummary.total_wasted_per_month || 0;
-  const cluster_wasted_cost_per_hour = costSummary.total_wasted_per_hour || 0;
+  const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
+  const filteredPods = hideSystemK8s 
+    ? snap.pods.filter(p => !SYSTEM_NAMESPACES.includes(p.namespace)) 
+    : snap.pods;
 
-  const groups = groupByNamespace(snap.pods);
+  const groups = groupByNamespace(filteredPods);
+
+  // Recalculate totals based on filtered pods
+  const cluster_cost_per_month = groups.reduce((acc, g) => acc + g.cost_per_month, 0);
+  const cluster_wasted_cost_per_month = groups.reduce((acc, g) => acc + g.wasted_cost_per_month, 0);
+  const cluster_cost_per_hour = cluster_cost_per_month / 730;
+  const cluster_wasted_cost_per_hour = cluster_wasted_cost_per_month / 730;
+
   const effectiveCost = cluster_cost_per_month - cluster_wasted_cost_per_month;
   const wastePercent = cluster_cost_per_month > 0 ? Math.round(
     (cluster_wasted_cost_per_month / cluster_cost_per_month) * 100
@@ -466,7 +472,7 @@ export default function CostBreakdown({ selectedSnapshotId }) {
         <div className="mb-7">
           <h1 className="m-0 text-[22px] font-bold text-[#e7e9ee]">Cost Breakdown</h1>
           <p className="m-0 mt-1 text-[13.5px] text-[#9099ab]">
-            Heuristic-based pricing · {snap.pods.length} pods across {groups.length} namespaces
+            Heuristic-based pricing · {filteredPods.length} pods across {groups.length} namespaces
           </p>
         </div>
 
@@ -505,7 +511,7 @@ export default function CostBreakdown({ selectedSnapshotId }) {
                 icon={Layers}
                 label="Namespaces"
                 value={groups.length}
-                sub={`${snap.pods.length} pods total`}
+                sub={`${filteredPods.length} pods total`}
                 color="#9b8afb"
               />
             </div>

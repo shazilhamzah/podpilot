@@ -48,6 +48,7 @@ from typing import Optional
 class ChatRequest(BaseModel):
     question: str
     snapshot_id: Optional[str] = None
+    hide_system: Optional[bool] = False
 
 class SolutionRequest(BaseModel):
     title: str
@@ -174,17 +175,98 @@ async def get_cached_snapshot(snapshot_id: Optional[str] = None) -> dict:
 
     return cache["snapshot"]
 
+def filter_system_resources(snap: dict) -> dict:
+    SYSTEM_NAMESPACES = {'kube-system', 'kube-public', 'kube-node-lease'}
+    filtered = {
+        "captured_at": snap.get("captured_at"),
+        "cluster_name": snap.get("cluster_name"),
+        "nodes": snap.get("nodes", []),
+    }
+    filtered["pods"] = [p for p in snap.get("pods", []) if p.get("namespace") not in SYSTEM_NAMESPACES]
+    filtered["deployments"] = [d for d in snap.get("deployments", []) if d.get("namespace") not in SYSTEM_NAMESPACES]
+    filtered["services"] = [s for s in snap.get("services", []) if s.get("namespace") not in SYSTEM_NAMESPACES]
+    filtered["pvcs"] = [p for p in snap.get("pvcs", []) if p.get("namespace") not in SYSTEM_NAMESPACES]
+    
+    total_cost_per_hour = sum(p.get("cost_per_hour", 0.0) for p in filtered["pods"])
+    total_wasted_per_hour = sum(p.get("wasted_cost_per_hour", 0.0) for p in filtered["pods"])
+    total_wasted_per_month = total_wasted_per_hour * 730
+    
+    filtered["cost_summary"] = {
+        "total_cost_per_hour": total_cost_per_hour,
+        "total_wasted_per_hour": total_wasted_per_hour,
+        "total_wasted_per_month": total_wasted_per_month
+    }
+    return filtered
+
+def enrich_issues_with_namespaces(result: dict, snap: dict) -> dict:
+    if not result or "issues" not in result:
+        return result
+    resource_ns = {}
+    for p in snap.get("pods", []):
+        if p.get("name") and p.get("namespace"):
+            resource_ns[p["name"]] = p["namespace"]
+    for d in snap.get("deployments", []):
+        if d.get("name") and d.get("namespace"):
+            resource_ns[d["name"]] = d["namespace"]
+    for s in snap.get("services", []):
+        if s.get("name") and s.get("namespace"):
+            resource_ns[s["name"]] = s["namespace"]
+    for pvc in snap.get("pvcs", []):
+        if pvc.get("name") and pvc.get("namespace"):
+            resource_ns[pvc["name"]] = pvc["namespace"]
+
+    image_ns = {}
+    for p in snap.get("pods", []):
+        ns = p.get("namespace")
+        if ns:
+            for img in p.get("images", []):
+                if img not in image_ns:
+                    image_ns[img] = set()
+                image_ns[img].add(ns)
+            img = p.get("image")
+            if img:
+                if img not in image_ns:
+                    image_ns[img] = set()
+                image_ns[img].add(ns)
+
+    for issue in result["issues"]:
+        res_name = issue.get("affected_resource")
+        if not res_name:
+            continue
+        if res_name in resource_ns:
+            issue["namespace"] = resource_ns[res_name]
+            continue
+        found = False
+        for k, ns in resource_ns.items():
+            if k in res_name or res_name in k:
+                issue["namespace"] = ns
+                found = True
+                break
+        if found:
+            continue
+        if res_name in image_ns:
+            issue["namespace"] = list(image_ns[res_name])[0]
+            continue
+        for img, namespaces in image_ns.items():
+            if img in res_name or res_name in img:
+                issue["namespace"] = list(namespaces)[0]
+                found = True
+                break
+        if found:
+            continue
+    return result
+
 async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] = None):
     if snapshot_id:
         from bson import ObjectId
         doc = await db.snapshots.find_one({"_id": ObjectId(snapshot_id)})
         if not doc:
             raise Exception("Snapshot not found")
-            
+        
         analysis_results = doc.get("analysis_results", {})
         if key in analysis_results:
             print(f"[DB HIT] Serving historical '{key}' from db.snapshots.")
-            return analysis_results[key]
+            return enrich_issues_with_namespaces(analysis_results[key], doc.get("snapshot", {}))
             
         print(f"[GROQ REQUEST] Historical miss for '{key}'. Sending request to Groq API...")
         result = compute_fn(doc.get("snapshot", {}))
@@ -193,7 +275,7 @@ async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] =
             {"_id": ObjectId(snapshot_id)},
             {"$set": {f"analysis_results.{key}": result}}
         )
-        return result
+        return enrich_issues_with_namespaces(result, doc.get("snapshot", {}))
 
     snap = await get_cached_snapshot()
     cache = await load_cache()
@@ -208,7 +290,7 @@ async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] =
     else:
         print(f"[CACHE HIT] Serving '{key}' from cache.")
         
-    return cache["analysis_results"][key]
+    return enrich_issues_with_namespaces(cache["analysis_results"][key], snap)
 
 async def get_cached_analysis_async(key: str, compute_fn, snapshot_id: Optional[str] = None):
     if snapshot_id:
@@ -220,7 +302,7 @@ async def get_cached_analysis_async(key: str, compute_fn, snapshot_id: Optional[
         analysis_results = doc.get("analysis_results", {})
         if key in analysis_results:
             print(f"[DB HIT] Serving historical '{key}' from db.snapshots.")
-            return analysis_results[key]
+            return enrich_issues_with_namespaces(analysis_results[key], doc.get("snapshot", {}))
             
         print(f"[GROQ REQUEST] Historical miss for '{key}'. Sending async request...")
         result = await compute_fn(doc.get("snapshot", {}))
@@ -229,7 +311,7 @@ async def get_cached_analysis_async(key: str, compute_fn, snapshot_id: Optional[
             {"_id": ObjectId(snapshot_id)},
             {"$set": {f"analysis_results.{key}": result}}
         )
-        return result
+        return enrich_issues_with_namespaces(result, doc.get("snapshot", {}))
 
     snap = await get_cached_snapshot()
     cache = await load_cache()
@@ -244,7 +326,7 @@ async def get_cached_analysis_async(key: str, compute_fn, snapshot_id: Optional[
     else:
         print(f"[CACHE HIT] Serving '{key}' from cache.")
         
-    return cache["analysis_results"][key]
+    return enrich_issues_with_namespaces(cache["analysis_results"][key], snap)
 
 @app.on_event("startup")
 async def startup_event():
@@ -337,6 +419,9 @@ async def chat(request: ChatRequest):
             snap = await get_cached_snapshot()
             cache = await load_cache()
             age = int(time.time() - cache["last_updated"]) if cache["last_updated"] else 0
+
+        if request.hide_system:
+            snap = filter_system_resources(snap)
 
         ans = chat_with_cluster(request.question, snap)
         return {

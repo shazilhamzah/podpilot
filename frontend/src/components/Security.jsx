@@ -387,7 +387,7 @@ function ResourceSection({ resource, checks, selectedSnapshotId }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-export default function Security({ selectedSnapshotId, snapshots }) {
+export default function Security({ selectedSnapshotId, snapshots, hideSystemK8s }) {
   const [viewMode, setViewMode] = useState("severity");
   const [activeSeverity, setActiveSeverity] = useState("All");
   const [loading, setLoading] = useState(false);
@@ -410,16 +410,20 @@ export default function Security({ selectedSnapshotId, snapshots }) {
         const data = await res.json();
         
         // Map backend issues to frontend expected structure
-        const mappedIssues = (data.issues || []).map((issue, index) => ({
-          id: `issue-${index}`,
-          category: issue.category || "Other",
-          severity: issue.severity || "info",
-          title: issue.title || "Security finding",
-          description: issue.description || "No description provided.",
-          remediation: issue.remediation || "Investigate the affected resource.",
-          resources: issue.affected_resource ? [issue.affected_resource] : [],
-          passed: false
-        }));
+        const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
+        const mappedIssues = (data.issues || [])
+          .map((issue, index) => ({
+            id: `issue-${index}`,
+            category: issue.category || "Other",
+            severity: issue.severity || "info",
+            title: issue.title || "Security finding",
+            description: issue.description || "No description provided.",
+            remediation: issue.remediation || "Investigate the affected resource.",
+            resources: issue.affected_resource ? [issue.affected_resource] : [],
+            namespace: issue.namespace,
+            passed: false
+          }))
+          .filter(issue => !hideSystemK8s || !issue.namespace || !SYSTEM_NAMESPACES.includes(issue.namespace));
         
         setIssues(mappedIssues);
       } catch (err) {

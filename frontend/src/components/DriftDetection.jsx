@@ -453,7 +453,7 @@ function NoDrift() {
 // ---------------------------------------------------------------------------
 // Compare Snapshots View
 // ---------------------------------------------------------------------------
-function CompareSnapshotsView({ onClose, snapshots }) {
+function CompareSnapshotsView({ onClose, snapshots, hideSystemK8s }) {
   const defaultSnapA = snapshots.length > 1 ? snapshots[1].id : (snapshots[0]?.id || "");
   const defaultSnapB = snapshots.length > 0 ? snapshots[0].id : "";
   
@@ -481,7 +481,10 @@ function CompareSnapshotsView({ onClose, snapshots }) {
     }
   }
 
-  const changes = result?.diff_summary ? parseDiffSummary(result.diff_summary) : [];
+  const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
+  const changes = result?.diff_summary 
+    ? parseDiffSummary(result.diff_summary).filter(c => !hideSystemK8s || !SYSTEM_NAMESPACES.includes(c.ns)) 
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -601,7 +604,7 @@ function CompareSnapshotsView({ onClose, snapshots }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-export default function DriftDetection({ snapshots, selectedSnapshotId, setSelectedSnapshotId }) {
+export default function DriftDetection({ snapshots, selectedSnapshotId, setSelectedSnapshotId, hideSystemK8s }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -678,7 +681,10 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
     );
   }
 
-  const changes = result.diff_summary ? parseDiffSummary(result.diff_summary) : [];
+  const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
+  const changes = result.diff_summary 
+    ? parseDiffSummary(result.diff_summary).filter(c => !hideSystemK8s || !SYSTEM_NAMESPACES.includes(c.ns)) 
+    : [];
 
   // Severity counts
   const criticalCount = changes.filter((c) => c.severity === "critical").length;
@@ -769,7 +775,7 @@ export default function DriftDetection({ snapshots, selectedSnapshotId, setSelec
           </div>
 
           {showCompareModal ? (
-            <CompareSnapshotsView snapshots={snapshots} onClose={() => setShowCompareModal(false)} />
+            <CompareSnapshotsView snapshots={snapshots} onClose={() => setShowCompareModal(false)} hideSystemK8s={hideSystemK8s} />
           ) : (
             <>
 

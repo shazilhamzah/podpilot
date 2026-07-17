@@ -82,7 +82,7 @@ function TypingBubble() {
   );
 }
 
-export default function Chat({ selectedSnapshotId }) {
+export default function Chat({ selectedSnapshotId, hideSystemK8s }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -111,7 +111,10 @@ export default function Chat({ selectedSnapshotId }) {
 
     try {
       const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
-      const payload = { question: trimmed };
+      const payload = { 
+        question: trimmed,
+        hide_system: hideSystemK8s
+      };
       if (selectedSnapshotId) {
         payload.snapshot_id = selectedSnapshotId;
       }
