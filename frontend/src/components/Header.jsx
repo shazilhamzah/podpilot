@@ -11,7 +11,6 @@ import {
   Wallet,
   GitCompareArrows,
   ShieldCheck,
-  FileChartColumn,
   Plus,
   X,
   Loader2,
@@ -38,6 +37,7 @@ export default function Header({
   onSnapshotCreated,
   hideSystemK8s,
   setHideSystemK8s,
+  onImpactReport,
 }) {
   const tabRefs = useRef({});
   const dropdownRef = useRef(null);
@@ -287,7 +287,7 @@ export default function Header({
           {/* Separate Impact Report button */}
           <button
             type="button"
-            onClick={() => {}}
+            onClick={onImpactReport}
             className="flex h-9 shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-[#6f7bff] to-[#3546c4] px-3.5 text-[13.5px] font-semibold text-white shadow-[0_2px_8px_rgba(79,109,245,0.25)] transition-all hover:brightness-110 hover:shadow-[0_4px_12px_rgba(79,109,245,0.4)] active:translate-y-px"
           >
             <Sparkles size={16} aria-hidden="true" />

@@ -6,8 +6,10 @@ import Chat from "./components/Chat"
 import CostBreakdown from "./components/CostBreakdown"
 import DriftDetection from "./components/DriftDetection"
 import Security from "./components/Security"
+import ImpactReport from "./components/ImpactReport"
 
 const App = () => {
+  const [showReport, setShowReport] = useState(false)
   const [activeTab, setActiveTab] = useState("Chat")
   const [snapshots, setSnapshots] = useState([])
   const [selectedSnapshotId, setSelectedSnapshotId] = useState("")
@@ -81,6 +83,7 @@ const App = () => {
         onSnapshotCreated={() => fetchHistory(true)}
         hideSystemK8s={hideSystemK8s}
         setHideSystemK8s={setHideSystemK8s}
+        onImpactReport={() => setShowReport(true)}
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar selectedSnapshotId={selectedSnapshotId} activeTab={activeTab} hideSystemK8s={hideSystemK8s} />
@@ -88,6 +91,7 @@ const App = () => {
           {renderMain()}
         </main>
       </div>
+      {showReport && <ImpactReport onClose={() => setShowReport(false)} selectedSnapshotId={selectedSnapshotId} />}
     </div>
   )
 }

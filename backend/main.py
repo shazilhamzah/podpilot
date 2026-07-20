@@ -1,9 +1,10 @@
 import os
 import time
 import json
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -32,6 +33,7 @@ from drift_detection import (
     summarize_diff,
     explain_drift
 )
+from report import build_impact_report, list_report_snapshots, render_report_html
 
 load_dotenv(override=True)
 
@@ -647,6 +649,34 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/refresh"})
 
+@app.get("/report/snapshots")
+async def report_snapshots():
+    """Return the saved snapshots used by the report comparison controls."""
+    return await list_report_snapshots()
+
+@app.get("/report/impact")
+async def report_impact(from_id: str, to_id: str):
+    """Build a reproducible comparison between two saved snapshots."""
+    return await build_impact_report(from_id, to_id)
+
+@app.post("/report/pdf")
+async def report_pdf(report: dict = Body(...)):
+    """Render the report already displayed in the UI; do not rebuild or call AI again."""
+    if not report.get("executive_summary") or not report.get("cost") or not report.get("security"):
+        raise HTTPException(status_code=422, detail="The displayed report payload is incomplete.")
+    try:
+        from weasyprint import HTML
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="PDF export is unavailable. Install WeasyPrint in the backend virtual environment.",
+        ) from exc
+    return Response(
+        content=HTML(string=render_report_html(report)).write_pdf(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=podpilot-impact-report.pdf"},
+    )
+
 # ---------------------------------------------------------------------------
 # Frontend Static Files (single-image Docker mode)
 # Set SERVE_FRONTEND=true to enable. The Dockerfile builds React into ./static
@@ -665,4 +695,3 @@ if os.getenv("SERVE_FRONTEND", "false").lower() == "true" and _STATIC_DIR.exists
         if index.exists():
             return FileResponse(str(index))
         raise HTTPException(status_code=404, detail="Frontend not found")
-
