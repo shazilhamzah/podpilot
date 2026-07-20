@@ -63,7 +63,8 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
         pod_fields = ["name", "namespace", "status", "status_phase", "restart_count",
                       "cpu_requested", "cpu_actual", "mem_requested_gb", "mem_actual_gb",
                       "cost_per_hour", "wasted_cost_per_month",
-                      "has_cpu_limit", "has_mem_limit", "runs_as_root"]
+                      "has_cpu_limit", "has_mem_limit", "runs_as_root",
+                      "images", "probes", "lifecycle_hooks"]
         slice_data["pods"] = [
             {k: p.get(k) for k in pod_fields if p.get(k) is not None}
             for p in snapshot.get("pods", [])
@@ -88,6 +89,16 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
              "status": pvc.get("status"), "capacity_gb": pvc.get("capacity_gb"), "is_attached": pvc.get("is_attached")}
             for pvc in snapshot.get("pvcs", [])
         ]
+
+    slice_data["statefulsets"] = snapshot.get("statefulsets", [])
+    slice_data["daemonsets"] = snapshot.get("daemonsets", [])
+    slice_data["jobs"] = snapshot.get("jobs", [])
+    slice_data["cronjobs"] = snapshot.get("cronjobs", [])
+    slice_data["ingresses"] = snapshot.get("ingresses", [])
+    slice_data["networkpolicies"] = snapshot.get("networkpolicies", [])
+    slice_data["configmaps"] = snapshot.get("configmaps", [])
+    slice_data["secrets"] = snapshot.get("secrets", [])
+    slice_data["hpas"] = snapshot.get("hpas", [])
 
     snapshot_json = json.dumps(slice_data, default=str)
 
@@ -171,7 +182,9 @@ def slice_reliability(snapshot: dict) -> dict:
                 "status": p.get("status"),
                 "restart_count": p.get("restart_count"),
                 "has_cpu_limit": p.get("has_cpu_limit"),
-                "has_mem_limit": p.get("has_mem_limit")
+                "has_mem_limit": p.get("has_mem_limit"),
+                "probes": p.get("probes"),
+                "lifecycle_hooks": p.get("lifecycle_hooks")
             })
     deployments = []
     for d in snapshot.get("deployments", []):
@@ -184,7 +197,14 @@ def slice_reliability(snapshot: dict) -> dict:
                 "desired_replicas": r_desired,
                 "ready_replicas": r_ready
             })
-    return {"pods": pods, "deployments": deployments}
+    return {
+        "pods": pods, 
+        "deployments": deployments,
+        "statefulsets": snapshot.get("statefulsets", []),
+        "daemonsets": snapshot.get("daemonsets", []),
+        "jobs": snapshot.get("jobs", []),
+        "hpas": snapshot.get("hpas", [])
+    }
 
 def slice_performance(snapshot: dict) -> dict:
     nodes = [
@@ -215,7 +235,12 @@ def slice_performance(snapshot: dict) -> dict:
                 "mem_requested_gb": p.get("mem_requested_gb"),
                 "mem_actual_gb": p.get("mem_actual_gb")
             })
-    return {"nodes": nodes, "pods": pods}
+    return {
+        "nodes": nodes, 
+        "pods": pods,
+        "hpas": snapshot.get("hpas", []),
+        "cronjobs": snapshot.get("cronjobs", [])
+    }
 
 def slice_storage(snapshot: dict) -> dict:
     return {
@@ -227,7 +252,8 @@ def slice_storage(snapshot: dict) -> dict:
                 "capacity_gb": pvc.get("capacity_gb"),
                 "storage_class": pvc.get("storage_class")
             } for pvc in snapshot.get("pvcs", [])
-        ]
+        ],
+        "statefulsets": snapshot.get("statefulsets", [])
     }
 
 def slice_security(snapshot: dict) -> dict:
@@ -245,7 +271,8 @@ def slice_security(snapshot: dict) -> dict:
             "name": p.get("name"),
             "namespace": p.get("namespace"),
             "has_cpu_limit": p.get("has_cpu_limit"),
-            "has_mem_limit": p.get("has_mem_limit")
+            "has_mem_limit": p.get("has_mem_limit"),
+            "runs_as_root": p.get("runs_as_root")
         } for p in snapshot.get("pods", [])
     ]
     deployments = [
@@ -254,7 +281,15 @@ def slice_security(snapshot: dict) -> dict:
             "namespace": d.get("namespace")
         } for d in snapshot.get("deployments", [])
     ]
-    return {"services": services, "pods": pods, "deployments": deployments}
+    return {
+        "services": services, 
+        "pods": pods, 
+        "deployments": deployments,
+        "networkpolicies": snapshot.get("networkpolicies", []),
+        "ingresses": snapshot.get("ingresses", []),
+        "secrets": snapshot.get("secrets", []),
+        "configmaps": snapshot.get("configmaps", [])
+    }
 
 # ═══════════════════════════════════════
 # SECTION 4 — JSON PARSING HELPER

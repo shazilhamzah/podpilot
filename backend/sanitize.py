@@ -16,8 +16,17 @@ def sanitize(snapshot: dict) -> dict:
         "nodes": [],
         "pods": [],
         "deployments": [],
+        "statefulsets": snapshot.get("statefulsets", []),
+        "daemonsets": snapshot.get("daemonsets", []),
+        "jobs": snapshot.get("jobs", []),
+        "cronjobs": snapshot.get("cronjobs", []),
         "services": [],
-        "pvcs": []
+        "ingresses": snapshot.get("ingresses", []),
+        "networkpolicies": snapshot.get("networkpolicies", []),
+        "configmaps": snapshot.get("configmaps", []),
+        "secrets": snapshot.get("secrets", []),
+        "pvcs": [],
+        "hpas": snapshot.get("hpas", [])
     }
     
     # Cost Summary
@@ -55,6 +64,8 @@ def sanitize(snapshot: dict) -> dict:
             "wasted_cost_per_hour": float(pod.get("wasted_cost_per_hour") or 0.0),
             "wasted_cost_per_month": float(pod.get("wasted_cost_per_month") or 0.0),
             "images": pod.get("images", []),
+            "probes": pod.get("probes", []),
+            "lifecycle_hooks": pod.get("lifecycle_hooks", []),
             "runs_as_root": bool(pod.get("runs_as_root") or False)
         })
         
@@ -88,8 +99,8 @@ def sanitize(snapshot: dict) -> dict:
         })
 
     # Token check
-    if token_estimate(clean) > 6000:
-        print("WARNING: sanitized snapshot exceeds 6000 tokens. Consider filtering to podpilot-demo namespace only.")
+    if token_estimate(clean) > 15000:
+        print("WARNING: sanitized snapshot exceeds 15000 tokens. Consider filtering to podpilot-demo namespace only.")
 
     return clean
 

@@ -110,6 +110,9 @@ def snapshot():
     core_v1 = client.CoreV1Api()
     apps_v1 = client.AppsV1Api()
     custom_api = client.CustomObjectsApi()
+    batch_v1 = client.BatchV1Api()
+    networking_v1 = client.NetworkingV1Api()
+    autoscaling_v2 = client.AutoscalingV2Api()
 
     captured_at = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -126,6 +129,15 @@ def snapshot():
     deployments_data = []
     services_data = []
     pvcs_data = []
+    statefulsets_data = []
+    daemonsets_data = []
+    jobs_data = []
+    cronjobs_data = []
+    ingresses_data = []
+    networkpolicies_data = []
+    configmaps_data = []
+    secrets_data = []
+    hpas_data = []
 
     node_metrics_dict = {}
     pod_metrics_dict = {}
@@ -214,11 +226,20 @@ def snapshot():
             has_cpu_limit = False
             has_mem_limit = False
             images = []
+            probes = []
+            lifecycle_hooks = []
             
             if pod.spec.containers:
                 for container in pod.spec.containers:
                     if container.image and container.image not in images:
                         images.append(container.image)
+                        
+                    if getattr(container, 'liveness_probe', None):
+                        probes.append({"container": container.name, "type": "liveness", "details": str(container.liveness_probe)})
+                    if getattr(container, 'readiness_probe', None):
+                        probes.append({"container": container.name, "type": "readiness", "details": str(container.readiness_probe)})
+                    if getattr(container, 'lifecycle', None):
+                        lifecycle_hooks.append({"container": container.name, "details": str(container.lifecycle)})
                         
                     if container.security_context and container.security_context.run_as_non_root is not None:
                         if container.security_context.run_as_non_root is False:
@@ -252,6 +273,8 @@ def snapshot():
                 "has_cpu_limit": has_cpu_limit,
                 "has_mem_limit": has_mem_limit,
                 "images": images,
+                "probes": probes,
+                "lifecycle_hooks": lifecycle_hooks,
                 "runs_as_root": runs_as_root
             })
     except Exception:
@@ -305,14 +328,45 @@ def snapshot():
     except Exception:
         pass
 
+    try:
+        for s in apps_v1.list_stateful_set_for_all_namespaces().items:
+            statefulsets_data.append({"name": s.metadata.name, "namespace": s.metadata.namespace, "desired_replicas": getattr(s.spec, 'replicas', 0), "ready_replicas": getattr(s.status, 'ready_replicas', 0)})
+        for ds in apps_v1.list_daemon_set_for_all_namespaces().items:
+            daemonsets_data.append({"name": ds.metadata.name, "namespace": ds.metadata.namespace, "desired_number_scheduled": getattr(ds.status, 'desired_number_scheduled', 0), "number_ready": getattr(ds.status, 'number_ready', 0)})
+        for j in batch_v1.list_job_for_all_namespaces().items:
+            jobs_data.append({"name": j.metadata.name, "namespace": j.metadata.namespace, "active": getattr(j.status, 'active', 0), "succeeded": getattr(j.status, 'succeeded', 0), "failed": getattr(j.status, 'failed', 0)})
+        for cj in batch_v1.list_cron_job_for_all_namespaces().items:
+            cronjobs_data.append({"name": cj.metadata.name, "namespace": cj.metadata.namespace, "schedule": cj.spec.schedule, "concurrency_policy": getattr(cj.spec, 'concurrency_policy', 'Allow')})
+        for i in networking_v1.list_ingress_for_all_namespaces().items:
+            ingresses_data.append({"name": i.metadata.name, "namespace": i.metadata.namespace, "rules": str(i.spec.rules)})
+        for np in networking_v1.list_network_policy_for_all_namespaces().items:
+            networkpolicies_data.append({"name": np.metadata.name, "namespace": np.metadata.namespace, "pod_selector": str(np.spec.pod_selector), "policy_types": str(np.spec.policy_types)})
+        for cm in core_v1.list_config_map_for_all_namespaces().items:
+            configmaps_data.append({"name": cm.metadata.name, "namespace": cm.metadata.namespace, "keys": list(cm.data.keys()) if cm.data else []})
+        for sec in core_v1.list_secret_for_all_namespaces().items:
+            secrets_data.append({"name": sec.metadata.name, "namespace": sec.metadata.namespace, "type": sec.type, "keys": list(sec.data.keys()) if sec.data else []})
+        for hpa in autoscaling_v2.list_horizontal_pod_autoscaler_for_all_namespaces().items:
+            hpas_data.append({"name": hpa.metadata.name, "namespace": hpa.metadata.namespace, "min_replicas": hpa.spec.min_replicas, "max_replicas": hpa.spec.max_replicas, "metrics": str(hpa.spec.metrics)})
+    except Exception as e:
+        print(f"Error fetching extended resources: {e}")
+
     return {
         "captured_at": captured_at,
         "cluster_name": cluster_name,
         "nodes": nodes_data,
         "pods": pods_data,
         "deployments": deployments_data,
+        "statefulsets": statefulsets_data,
+        "daemonsets": daemonsets_data,
+        "jobs": jobs_data,
+        "cronjobs": cronjobs_data,
         "services": services_data,
-        "pvcs": pvcs_data
+        "ingresses": ingresses_data,
+        "networkpolicies": networkpolicies_data,
+        "configmaps": configmaps_data,
+        "secrets": secrets_data,
+        "pvcs": pvcs_data,
+        "hpas": hpas_data
     }
 
 if __name__ == "__main__":
