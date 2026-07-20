@@ -4,4 +4,6 @@ backend/kubectl
 backend/minikube-linux-amd64
 backend/get-docker.sh
 .gitignore
-*node_modules
+node_modules/
+__pycache__/
+.pytest_cache/
