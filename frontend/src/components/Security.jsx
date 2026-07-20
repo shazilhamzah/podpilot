@@ -392,7 +392,7 @@ export default function Security({ selectedSnapshotId, snapshots, hideSystemK8s 
   const [activeSeverity, setActiveSeverity] = useState("All");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [issues, setIssues] = useState([]);
+  const [rawIssues, setRawIssues] = useState([]);
 
   useEffect(() => {
     async function fetchSecurity() {
@@ -410,7 +410,6 @@ export default function Security({ selectedSnapshotId, snapshots, hideSystemK8s 
         const data = await res.json();
         
         // Map backend issues to frontend expected structure
-        const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
         const mappedIssues = (data.issues || [])
           .map((issue, index) => ({
             id: `issue-${index}`,
@@ -422,10 +421,9 @@ export default function Security({ selectedSnapshotId, snapshots, hideSystemK8s 
             resources: issue.affected_resource ? [issue.affected_resource] : [],
             namespace: issue.namespace,
             passed: false
-          }))
-          .filter(issue => !hideSystemK8s || !issue.namespace || !SYSTEM_NAMESPACES.includes(issue.namespace));
+          }));
         
-        setIssues(mappedIssues);
+        setRawIssues(mappedIssues);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -437,6 +435,9 @@ export default function Security({ selectedSnapshotId, snapshots, hideSystemK8s 
 
   const currentSnap = snapshots?.find(s => s.id === selectedSnapshotId);
   const isCacheMiss = currentSnap && !currentSnap.cached_analyses?.includes("security");
+
+  const SYSTEM_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease'];
+  const issues = rawIssues.filter(issue => !hideSystemK8s || !issue.namespace || !SYSTEM_NAMESPACES.includes(issue.namespace));
 
   if (loading) {
     return (

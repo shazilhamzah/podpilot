@@ -125,23 +125,28 @@ export default function Sidebar({ selectedSnapshotId, activeTab, hideSystemK8s }
 
   useEffect(() => {
     const fetchSidebarData = async () => {
+      if (!isOpen) return;
+
       setLoading(true);
       try {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
         const query = selectedSnapshotId ? `?snapshot_id=${selectedSnapshotId}` : '';
-        const catKeys = ["cost", "reliability", "performance", "storage", "security"];
-        const [snapRes, ...catResponses] = await Promise.all([
+        const catKey = activeCategory.toLowerCase();
+        
+        const [snapRes, catRes] = await Promise.all([
           cachedFetch(`${backendUrl}/snapshot${query}`),
-          ...catKeys.map(cat => cachedFetch(`${backendUrl}/${cat}${query}`))
+          cachedFetch(`${backendUrl}/${catKey}${query}`)
         ]);
+        
         if (snapRes.ok) setSnapshot(await snapRes.json());
-        const newCatData = {};
-        for (let i = 0; i < catKeys.length; i++) {
-          if (catResponses[i].ok) {
-            newCatData[catKeys[i]] = await catResponses[i].json();
-          }
+        
+        if (catRes.ok) {
+          const newCatData = await catRes.json();
+          setCategoryData(prev => ({
+            ...prev,
+            [catKey]: newCatData
+          }));
         }
-        setCategoryData(newCatData);
       } catch (err) {
         console.error("Failed to fetch sidebar data:", err);
       } finally {
@@ -151,7 +156,7 @@ export default function Sidebar({ selectedSnapshotId, activeTab, hideSystemK8s }
     fetchSidebarData();
     const interval = setInterval(fetchSidebarData, 60000);
     return () => clearInterval(interval);
-  }, [selectedSnapshotId]);
+  }, [selectedSnapshotId, isOpen, activeCategory]);
 
   const snapData = snapshot?.data || {};
   
@@ -191,7 +196,11 @@ export default function Sidebar({ selectedSnapshotId, activeTab, hideSystemK8s }
   );
 
   // Count issues per category for badge display
-  const countByCategory = (cat) => allAlerts.filter(a => a.category === cat.toLowerCase()).length;
+  const countByCategory = (cat) => {
+    const key = cat.toLowerCase();
+    if (!categoryData[key]) return undefined;
+    return allAlerts.filter(a => a.category === key).length;
+  };
 
   // Filtered alerts for the active category
   const activeCategoryKey = activeCategory.toLowerCase();
