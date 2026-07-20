@@ -143,7 +143,8 @@ async def get_cached_snapshot(snapshot_id: Optional[str] = None) -> dict:
     now = time.time()
     if cache["snapshot"] is None or cache["last_updated"] is None or (now - cache["last_updated"] > POLL_INTERVAL_SECONDS):
         try:
-            raw_snap = snapshot()
+            loop = asyncio.get_event_loop()
+            raw_snap = await loop.run_in_executor(None, snapshot)
             enriched = enrich_with_cost(raw_snap)
             clean_snap = sanitize(enriched)
             
@@ -257,6 +258,9 @@ def enrich_issues_with_namespaces(result: dict, snap: dict) -> dict:
     return result
 
 async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] = None):
+    import asyncio
+    loop = asyncio.get_event_loop()
+    
     if snapshot_id:
         from bson import ObjectId
         doc = await db.snapshots.find_one({"_id": ObjectId(snapshot_id)})
@@ -269,7 +273,7 @@ async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] =
             return enrich_issues_with_namespaces(analysis_results[key], doc.get("snapshot", {}))
             
         print(f"[GROQ REQUEST] Historical miss for '{key}'. Sending request to Groq API...")
-        result = compute_fn(doc.get("snapshot", {}))
+        result = await loop.run_in_executor(None, compute_fn, doc.get("snapshot", {}))
         
         await db.snapshots.update_one(
             {"_id": ObjectId(snapshot_id)},
@@ -285,7 +289,7 @@ async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] =
         
     if key not in cache["analysis_results"]:
         print(f"[GROQ REQUEST] Cache miss for '{key}'. Sending request to Groq API...")
-        cache["analysis_results"][key] = compute_fn(snap)
+        cache["analysis_results"][key] = await loop.run_in_executor(None, compute_fn, snap)
         await save_cache(cache)
     else:
         print(f"[CACHE HIT] Serving '{key}' from cache.")
@@ -423,7 +427,9 @@ async def chat(request: ChatRequest):
         if request.hide_system:
             snap = filter_system_resources(snap)
 
-        ans = chat_with_cluster(request.question, snap)
+        import asyncio
+        loop = asyncio.get_event_loop()
+        ans = await loop.run_in_executor(None, chat_with_cluster, request.question, snap)
         return {
             "question": request.question,
             "answer": ans,
@@ -439,11 +445,15 @@ async def chat(request: ChatRequest):
 async def get_solution(request: SolutionRequest):
     try:
         from health import get_security_solution
-        ans = get_security_solution(
-            title=request.title,
-            description=request.description,
-            remediation=request.remediation,
-            resources=request.resources
+        import asyncio
+        loop = asyncio.get_event_loop()
+        ans = await loop.run_in_executor(
+            None, 
+            get_security_solution, 
+            request.title, 
+            request.description, 
+            request.remediation, 
+            request.resources
         )
         return {"answer": ans}
     except Exception as e:
@@ -528,7 +538,11 @@ async def drift(snapshot_id: Optional[str] = None):
                 }
             changes = diff_snapshots(older, newer)
             diff_summary = summarize_diff(changes)
-            ai_explanation = explain_drift(diff_summary)
+            
+            import asyncio
+            loop = asyncio.get_event_loop()
+            ai_explanation = await loop.run_in_executor(None, explain_drift, diff_summary)
+            
             return {
                 "status": "success",
                 "message": "Compared current snapshot with previous.",
@@ -565,7 +579,9 @@ async def compare(snap_a: str, snap_b: str):
                 "changes_detected": 0
             }
             
-        ai_explanation = explain_drift(diff_summary)
+        import asyncio
+        loop = asyncio.get_event_loop()
+        ai_explanation = await loop.run_in_executor(None, explain_drift, diff_summary)
         
         return {
             "status": "success",
@@ -581,7 +597,9 @@ async def compare(snap_a: str, snap_b: str):
 async def refresh(request: Optional[SnapshotCreateRequest] = None):
     try:
         now = time.time()
-        raw_snap = snapshot()
+        import asyncio
+        loop = asyncio.get_event_loop()
+        raw_snap = await loop.run_in_executor(None, snapshot)
         enriched = enrich_with_cost(raw_snap)
         clean_snap = sanitize(enriched)
         

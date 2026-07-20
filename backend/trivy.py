@@ -136,39 +136,63 @@ def _run_trivy(image: str) -> dict:
         }
 
 
+_in_flight = {}
+_scan_sem = None
+
 async def scan_image_async(image: str) -> dict:
     """
-    Async image scan with a 3-layer cache:
+    Async image scan with a 3-layer cache and in-flight dedup:
       1. In-memory dict  (fastest — same pod lifetime)
-      2. MongoDB         (survives pod restarts)
-      3. Run trivy       (only if both caches miss)
+      2. In-flight dict  (dedup concurrent scans)
+      3. MongoDB         (survives pod restarts)
+      4. Run trivy       (capped concurrency)
     """
+    global _scan_sem
+    if _scan_sem is None:
+        _scan_sem = asyncio.Semaphore(3)
+
     # Layer 1: in-memory
     if image in _mem_cache:
         print(f"Skipping {image} (already in global cache)")
         return _mem_cache[image]
 
-    # Layer 2: MongoDB (handles the pod-restart case)
+    # Layer 2: in-flight dedup
+    if image in _in_flight:
+        print(f"Waiting for in-flight scan of {image}...")
+        return await _in_flight[image]
+
+    loop = asyncio.get_event_loop()
+    fut = loop.create_future()
+    _in_flight[image] = fut
+
     try:
+        # Layer 3: MongoDB
         from db import db
         if db is not None:
-            doc = await db.image_scans.find_one({"image": image}, {"_id": 0})
-            if doc:
-                print(f"Skipping {image} (already in global cache)")
-                _mem_cache[image] = doc
-                return doc
-    except Exception:
-        pass  # Fall through to actual scan
+            try:
+                doc = await db.image_scans.find_one({"image": image}, {"_id": 0})
+                if doc:
+                    print(f"Skipping {image} (already in db cache)")
+                    _mem_cache[image] = doc
+                    fut.set_result(doc)
+                    return doc
+            except Exception:
+                pass
 
-    # Layer 3: Run the scan in a thread so we don't block the async event loop
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, _run_trivy, image)
+        # Layer 4: Run actual scan, capped by semaphore
+        async with _scan_sem:
+            result = await loop.run_in_executor(None, _run_trivy, image)
 
-    # Populate both cache layers
-    _mem_cache[image] = result
-    await _save_to_db(result)
+        _mem_cache[image] = result
+        await _save_to_db(result)
+        fut.set_result(result)
+        return result
 
-    return result
+    except Exception as e:
+        fut.set_exception(e)
+        raise
+    finally:
+        _in_flight.pop(image, None)
 
 
 async def scan_all_images(snapshot: dict) -> dict:
