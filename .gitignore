@@ -1,9 +1,15 @@
 *venv
+.venv/
 *.env
+backend/.env
 backend/kubectl
 backend/minikube-linux-amd64
 backend/get-docker.sh
-.gitignore
 node_modules/
 __pycache__/
+*.pyc
 .pytest_cache/
+*.log
+logs.txt
+.agents/
+skills-lock.json
