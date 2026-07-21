@@ -128,6 +128,10 @@ def _structural_fingerprint(snap: dict) -> dict:
             {"name": d.get("name"), "desired": d.get("desired_replicas"), "ready": d.get("ready_replicas")}
             for d in snap.get("deployments", [])
         ], key=lambda x: x.get("name", "")),
+        "replicasets": sorted([
+            {"name": rs.get("name"), "desired": rs.get("desired_replicas"), "ready": rs.get("ready_replicas")}
+            for rs in snap.get("replicasets", [])
+        ], key=lambda x: x.get("name", "")),
         "services": sorted([s.get("name") for s in snap.get("services", [])]),
         "pvcs": sorted([{"name": pvc.get("name"), "status": pvc.get("status")} for pvc in snap.get("pvcs", [])], key=lambda x: x.get("name", "")),
         "node_count": len(snap.get("nodes", [])),
@@ -180,18 +184,19 @@ async def get_cached_snapshot(snapshot_id: Optional[str] = None) -> dict:
 
 def filter_system_resources(snap: dict) -> dict:
     SYSTEM_NAMESPACES = {'kube-system', 'kube-public', 'kube-node-lease'}
-    filtered = {
-        "captured_at": snap.get("captured_at"),
-        "cluster_name": snap.get("cluster_name"),
-        "nodes": snap.get("nodes", []),
-    }
-    filtered["pods"] = [p for p in snap.get("pods", []) if p.get("namespace") not in SYSTEM_NAMESPACES]
-    filtered["deployments"] = [d for d in snap.get("deployments", []) if d.get("namespace") not in SYSTEM_NAMESPACES]
-    filtered["services"] = [s for s in snap.get("services", []) if s.get("namespace") not in SYSTEM_NAMESPACES]
-    filtered["pvcs"] = [p for p in snap.get("pvcs", []) if p.get("namespace") not in SYSTEM_NAMESPACES]
+    filtered = {}
     
-    total_cost_per_hour = sum(p.get("cost_per_hour", 0.0) for p in filtered["pods"])
-    total_wasted_per_hour = sum(p.get("wasted_cost_per_hour", 0.0) for p in filtered["pods"])
+    for key, value in snap.items():
+        if isinstance(value, list) and key not in ["nodes"]:
+            filtered[key] = [
+                item for item in value 
+                if not (isinstance(item, dict) and item.get("namespace") in SYSTEM_NAMESPACES)
+            ]
+        else:
+            filtered[key] = value
+
+    total_cost_per_hour = sum(p.get("cost_per_hour", 0.0) for p in filtered.get("pods", []))
+    total_wasted_per_hour = sum(p.get("wasted_cost_per_hour", 0.0) for p in filtered.get("pods", []))
     total_wasted_per_month = total_wasted_per_hour * 730
     
     filtered["cost_summary"] = {
@@ -274,7 +279,7 @@ async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] =
             print(f"[DB HIT] Serving historical '{key}' from db.snapshots.")
             return enrich_issues_with_namespaces(analysis_results[key], doc.get("snapshot", {}))
             
-        print(f"[GROQ REQUEST] Historical miss for '{key}'. Sending request to Groq API...")
+        print(f"[AI REQUEST] Historical miss for '{key}'. Sending request to AI API...")
         result = await loop.run_in_executor(None, compute_fn, doc.get("snapshot", {}))
         
         await db.snapshots.update_one(
@@ -290,7 +295,7 @@ async def get_cached_analysis(key: str, compute_fn, snapshot_id: Optional[str] =
         cache["analysis_results"] = {}
         
     if key not in cache["analysis_results"]:
-        print(f"[GROQ REQUEST] Cache miss for '{key}'. Sending request to Groq API...")
+        print(f"[AI REQUEST] Cache miss for '{key}'. Sending request to AI API...")
         cache["analysis_results"][key] = await loop.run_in_executor(None, compute_fn, snap)
         await save_cache(cache)
     else:
@@ -310,7 +315,7 @@ async def get_cached_analysis_async(key: str, compute_fn, snapshot_id: Optional[
             print(f"[DB HIT] Serving historical '{key}' from db.snapshots.")
             return enrich_issues_with_namespaces(analysis_results[key], doc.get("snapshot", {}))
             
-        print(f"[GROQ REQUEST] Historical miss for '{key}'. Sending async request...")
+        print(f"[AI REQUEST] Historical miss for '{key}'. Sending async request...")
         result = await compute_fn(doc.get("snapshot", {}))
         
         await db.snapshots.update_one(
@@ -326,7 +331,7 @@ async def get_cached_analysis_async(key: str, compute_fn, snapshot_id: Optional[
         cache["analysis_results"] = {}
         
     if key not in cache["analysis_results"]:
-        print(f"[GROQ REQUEST] Cache miss for '{key}'. Sending async request...")
+        print(f"[AI REQUEST] Cache miss for '{key}'. Sending async request...")
         cache["analysis_results"][key] = await compute_fn(snap)
         await save_cache(cache)
     else:

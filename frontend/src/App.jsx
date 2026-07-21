@@ -7,6 +7,7 @@ import CostBreakdown from "./components/CostBreakdown"
 import DriftDetection from "./components/DriftDetection"
 import Security from "./components/Security"
 import ImpactReport from "./components/ImpactReport"
+import ClusterResources from "./components/ClusterResources"
 
 const App = () => {
   const [showReport, setShowReport] = useState(false)
@@ -51,26 +52,8 @@ const App = () => {
     });
   };
 
-  function renderMain() {
-    switch (activeTab) {
-      case "Cost Breakdown":
-        return <CostBreakdown selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />
-      case "Drift Detection":
-        return (
-          <DriftDetection 
-            snapshots={snapshots} 
-            selectedSnapshotId={selectedSnapshotId} 
-            setSelectedSnapshotId={setSelectedSnapshotId} 
-            hideSystemK8s={hideSystemK8s}
-          />
-        )
-      case "Security":
-        return <Security selectedSnapshotId={selectedSnapshotId} snapshots={snapshots} hideSystemK8s={hideSystemK8s} />
-      case "Chat":
-      default:
-        return <Chat key={selectedSnapshotId} selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />
-    }
-  }
+  // We remove renderMain so we can keep Chat mounted but hidden.
+  // This prevents Chat from losing its state when changing tabs.
 
   return (
     <div className="flex h-screen flex-col">
@@ -88,7 +71,20 @@ const App = () => {
       <div className="flex flex-1 min-h-0">
         <Sidebar selectedSnapshotId={selectedSnapshotId} activeTab={activeTab} hideSystemK8s={hideSystemK8s} />
         <main className="main-content flex-1 min-w-0 flex flex-col">
-          {renderMain()}
+          <div className={activeTab === "Chat" ? "flex flex-col h-full" : "hidden"}>
+            <Chat key={selectedSnapshotId} selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />
+          </div>
+          {activeTab === "Cost Breakdown" && <CostBreakdown selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />}
+          {activeTab === "Drift Detection" && (
+            <DriftDetection 
+              snapshots={snapshots} 
+              selectedSnapshotId={selectedSnapshotId} 
+              setSelectedSnapshotId={setSelectedSnapshotId} 
+              hideSystemK8s={hideSystemK8s}
+            />
+          )}
+          {activeTab === "Security" && <Security selectedSnapshotId={selectedSnapshotId} snapshots={snapshots} hideSystemK8s={hideSystemK8s} />}
+          {activeTab === "Cluster Resources" && <ClusterResources selectedSnapshotId={selectedSnapshotId} hideSystemK8s={hideSystemK8s} />}
         </main>
       </div>
       {showReport && <ImpactReport onClose={() => setShowReport(false)} selectedSnapshotId={selectedSnapshotId} />}

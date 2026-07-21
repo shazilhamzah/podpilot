@@ -16,6 +16,7 @@ def sanitize(snapshot: dict) -> dict:
         "nodes": [],
         "pods": [],
         "deployments": [],
+        "replicasets": snapshot.get("replicasets", []),
         "statefulsets": snapshot.get("statefulsets", []),
         "daemonsets": snapshot.get("daemonsets", []),
         "jobs": snapshot.get("jobs", []),

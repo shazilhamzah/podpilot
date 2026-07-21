@@ -30,9 +30,8 @@ metadata:
   namespace: podpilot
 type: Opaque
 stringData:
-  GEMINI_API_KEY: "REPLACE_WITH_YOUR_GEMINI_API_KEY"
-  GROQ_API_KEY: "REPLACE_WITH_YOUR_GROQ_API_KEY"
-  MODEL: "llama-3.1-8b-instant"
+  AI_API_KEY: "REPLACE_WITH_YOUR_AI_API_KEY"
+  MODEL: "REPLACE_WITH_THE_MODEL"
   MONGO_DB_URI: "REPLACE_WITH_YOUR_MONGODB_ATLAS_URI"
   # Optional: give the cluster a friendly display name in PodPilot UI
   CLUSTER_NAME: "my-cluster"

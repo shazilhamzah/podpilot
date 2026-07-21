@@ -11,7 +11,7 @@ Requires:
     pip install groq
 
 Environment:
-    GROQ_API_KEY must be set (e.g. in a .env file or your shell environment)
+    AI_API_KEY must be set (e.g. in a .env file or your shell environment)
 
 Usage from main.py:
     from drift_detection import save_snapshot, load_last_two_snapshots, \
@@ -46,7 +46,7 @@ from groq import Groq, RateLimitError
 
 load_dotenv(override=True)
 SNAPSHOT_DIR = "snapshots"
-groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+groq_client = Groq(api_key=os.environ.get("AI_API_KEY"))
 
 
 from db import db

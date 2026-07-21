@@ -127,6 +127,7 @@ def snapshot():
     nodes_data = []
     pods_data = []
     deployments_data = []
+    replicasets_data = []
     services_data = []
     pvcs_data = []
     statefulsets_data = []
@@ -329,6 +330,8 @@ def snapshot():
         pass
 
     try:
+        for rs in apps_v1.list_replica_set_for_all_namespaces().items:
+            replicasets_data.append({"name": rs.metadata.name, "namespace": rs.metadata.namespace, "desired_replicas": getattr(rs.spec, 'replicas', 0), "ready_replicas": getattr(rs.status, 'ready_replicas', 0)})
         for s in apps_v1.list_stateful_set_for_all_namespaces().items:
             statefulsets_data.append({"name": s.metadata.name, "namespace": s.metadata.namespace, "desired_replicas": getattr(s.spec, 'replicas', 0), "ready_replicas": getattr(s.status, 'ready_replicas', 0)})
         for ds in apps_v1.list_daemon_set_for_all_namespaces().items:
@@ -356,6 +359,7 @@ def snapshot():
         "nodes": nodes_data,
         "pods": pods_data,
         "deployments": deployments_data,
+        "replicasets": replicasets_data,
         "statefulsets": statefulsets_data,
         "daemonsets": daemonsets_data,
         "jobs": jobs_data,

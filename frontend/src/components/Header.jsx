@@ -16,6 +16,7 @@ import {
   Loader2,
   Sparkles,
   Check,
+  Server,
 } from "lucide-react";
 
 import PodPilotLogo from "./PodPilotLogo";
@@ -23,6 +24,7 @@ import { cachedFetch } from "../utils/fetchCache";
 
 const NAV_ITEMS = [
   { label: "Chat", icon: MessageSquare },
+  { label: "Cluster Resources", icon: Server },
   { label: "Cost Breakdown", icon: Wallet },
   { label: "Drift Detection", icon: GitCompareArrows },
   { label: "Security", icon: ShieldCheck },

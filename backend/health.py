@@ -38,6 +38,7 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
             "total_pods": len(snapshot.get("pods", [])),
             "total_nodes": len(snapshot.get("nodes", [])),
             "total_deployments": len(snapshot.get("deployments", [])),
+            "total_replicasets": len(snapshot.get("replicasets", [])),
             "total_services": len(snapshot.get("services", [])),
             "total_pvcs": len(snapshot.get("pvcs", [])),
         }
@@ -99,6 +100,7 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
     slice_data["configmaps"] = snapshot.get("configmaps", [])
     slice_data["secrets"] = snapshot.get("secrets", [])
     slice_data["hpas"] = snapshot.get("hpas", [])
+    slice_data["replicasets"] = snapshot.get("replicasets", [])
 
     snapshot_json = json.dumps(slice_data, default=str)
 
