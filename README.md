@@ -28,7 +28,7 @@ You have to add your API key. If you want to keep your snapshot history across r
 
 ```env
 AI_API_KEY=your_key
-MODEL=llama-3.1-8b-instant
+MODEL=your_model
 MONGO_DB_URI=mongodb+srv://...
 ```
 
@@ -60,7 +60,7 @@ First, add your API key to `k8s/podpilot.yaml` under the `podpilot-secrets` sect
 ```yaml
 stringData:
   AI_API_KEY: "your_real_key"
-  MODEL: "llama-3.1-8b-instant"
+  MODEL: "your_model"
 ```
 
 Apply the manifest:
