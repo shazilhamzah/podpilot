@@ -2,7 +2,6 @@
 
 PodPilot is a modern, AI-powered Kubernetes cluster copilot and dashboard. It provides real-time insights into your cluster's health, costs, performance, and security, allowing you to converse with your cluster state through an intelligent chat interface.
 
-![PodPilot Logo](./logo.png)
 
 ## Features
 - **AI Chat Copilot:** Ask questions about your cluster in plain English. The AI analyzes your cluster's current state to diagnose issues, check resource utilization, and answer queries.
