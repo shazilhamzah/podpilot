@@ -79,3 +79,14 @@ Then open `http://localhost:8000`.
 ## Architecture details
 
 We don't just dump your entire cluster state into the LLM context window. The backend slices the data based on your specific question to keep latency down and avoid wasting tokens. Snapshots sit in memory temporarily so we aren't hammering the Kubernetes API server with constant requests.
+
+## Troubleshooting
+
+**`ModuleNotFoundError: No module named 'app'` (or similar) when starting the backend**
+Make sure you're running `uvicorn` from inside the `backend/` folder, not the repo root. The command is `uvicorn main:app --reload`, run from wherever `main.py` actually lives.
+
+**Actual CPU/memory usage always shows as 0**
+This means `metrics-server` isn't installed in your cluster. On Minikube: `minikube addons enable metrics-server`. Give it a minute to start reporting, then confirm with `kubectl top pods`.
+
+**Chat or drift explanations come back empty or rate-limited**
+Check that your API key is actually loaded in the environment the backend is running in (`echo $AI_API_KEY` should print something). If it's set and you're still hitting limits, you may be on a free tier with a low tokens-per-minute cap — check your provider's dashboard for the exact limit.
