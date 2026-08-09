@@ -41,7 +41,7 @@ if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
     Write-Err "kubectl not found. Install from https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/"
 }
 
-$null = az account show 2>&1
+az account show >$null 2>$null
 if ($LASTEXITCODE -ne 0) { Write-Err "Not logged in to Azure. Run: az login" }
 
 $SubscriptionId   = az account show --query id   -o tsv
@@ -54,7 +54,7 @@ Write-Host ""
 # ── 1. Resource Group ─────────────────────────────────────────────────────────
 Write-Info "Step 1/5 - Resource group"
 
-$null = az group show --name $ResourceGroup 2>&1
+az group show --name $ResourceGroup >$null 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Warn "Resource group '$ResourceGroup' already exists - skipping creation."
 } else {
@@ -65,7 +65,7 @@ if ($LASTEXITCODE -eq 0) {
 # ── 2. AKS Cluster ────────────────────────────────────────────────────────────
 Write-Info "Step 2/5 - AKS cluster (this may take 5-10 minutes)"
 
-$null = az aks show --name $ClusterName --resource-group $ResourceGroup 2>&1
+az aks show --name $ClusterName --resource-group $ResourceGroup >$null 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Warn "AKS cluster '$ClusterName' already exists - skipping creation."
 } else {
@@ -96,7 +96,7 @@ Write-Ok "Kubeconfig updated. Current context: $CurrentContext"
 # ── 4. Cosmos DB Account ──────────────────────────────────────────────────────
 Write-Info "Step 4/5 - Azure Cosmos DB for MongoDB account (this may take 3-5 minutes)"
 
-$null = az cosmosdb show --name $CosmosAccount --resource-group $ResourceGroup 2>&1
+az cosmosdb show --name $CosmosAccount --resource-group $ResourceGroup >$null 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Warn "Cosmos DB account '$CosmosAccount' already exists - skipping creation."
 } else {
@@ -116,7 +116,7 @@ Write-Info "Step 5/5 - Cosmos DB database '$CosmosDbName'"
 $null = az cosmosdb mongodb database show `
     --account-name $CosmosAccount `
     --resource-group $ResourceGroup `
-    --name $CosmosDbName 2>&1
+    --name $CosmosDbName >$null 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Warn "Cosmos DB database '$CosmosDbName' already exists - skipping creation."
 } else {

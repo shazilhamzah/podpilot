@@ -44,7 +44,7 @@ if ($env:PODPILOT_FORCE_TEARDOWN -ne "1") {
 }
 
 # ── Pre-flight ────────────────────────────────────────────────────────────────
-$null = az account show 2>&1
+az account show >$null 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Not logged in to Azure. Run: az login" -ForegroundColor Red
     exit 1
