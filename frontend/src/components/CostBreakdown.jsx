@@ -110,8 +110,15 @@ const MOCK_SNAPSHOT = {
       cost_per_month: 2.99,
       wasted_cost_per_hour: 0.0009,
       wasted_cost_per_month: 0.66,
+      cost_source: "estimated"
     },
   ],
+  cost_summary: {
+    cost_source: "estimated",
+    total_cost_per_hour: 0.195,
+    total_wasted_per_hour: 0.0524,
+    total_wasted_per_month: 38.25
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -148,13 +155,35 @@ function groupByNamespace(pods) {
       memory_requested_gb: p.mem_requested_gb || 0,
       cpu_actual_cores: p.cpu_actual || 0,
       memory_actual_gb: p.mem_actual_gb || 0,
+      cost_source: p.cost_source,
     };
 
     map[p.namespace].pods.push(normalizedPod);
     map[p.namespace].cost_per_month += cost_per_month;
     map[p.namespace].wasted_cost_per_month += wasted_cost_per_month;
   });
+  });
   return Object.values(map).sort((a, b) => b.cost_per_month - a.cost_per_month);
+}
+
+// ---------------------------------------------------------------------------
+// Cost Source Badge
+// ---------------------------------------------------------------------------
+function CostSourceBadge({ source }) {
+  if (source === "opencost") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#50e3c2]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#50e3c2] uppercase tracking-wider border border-[#50e3c2]/20 shadow-[0_0_8px_rgba(80,227,194,0.15)]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#50e3c2]"></span>
+        Live Azure Cost
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#f5a623] uppercase tracking-wider border border-[#f5a623]/20">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#f5a623]"></span>
+      Estimated
+    </span>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -357,10 +386,13 @@ function NamespaceGroup({ group, totalClusterCost }) {
                 className="grid items-center gap-3 border-t border-[#1c2235] px-5 py-3.5 text-[13px] transition hover:bg-white/[0.025]"
                 style={{ gridTemplateColumns: "minmax(140px,2fr) 80px repeat(4,1fr) minmax(90px,1fr) minmax(80px,1fr)" }}
               >
-                {/* Name */}
-                <span className="truncate font-medium text-[#e7e9ee]" title={pod.name}>
-                  {pod.name}
-                </span>
+                {/* Name & Badge */}
+                <div className="flex min-w-0 flex-col items-start gap-1.5">
+                  <span className="w-full truncate font-medium text-[#e7e9ee]" title={pod.name}>
+                    {pod.name}
+                  </span>
+                  <CostSourceBadge source={pod.cost_source} />
+                </div>
 
                 {/* Phase */}
                 <PhaseBadge phase={pod.status_phase} />
@@ -469,11 +501,16 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
       <div className="mx-auto w-full max-w-6xl px-8 py-8">
 
         {/* ── Page title ── */}
-        <div className="mb-7">
-          <h1 className="m-0 text-[22px] font-bold text-[#e7e9ee]">Cost Breakdown</h1>
-          <p className="m-0 mt-1 text-[13.5px] text-[#9099ab]">
-            Heuristic-based pricing · {filteredPods.length} pods across {groups.length} namespaces
-          </p>
+        <div className="mb-7 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="m-0 text-[22px] font-bold text-[#e7e9ee]">Cost Breakdown</h1>
+              <CostSourceBadge source={snap?.cost_summary?.cost_source} />
+            </div>
+            <p className="m-0 mt-2 text-[13.5px] text-[#9099ab]">
+              {filteredPods.length} pods across {groups.length} namespaces
+            </p>
+          </div>
         </div>
 
         {/* ── Top section: summary cards + donut ── */}
@@ -599,8 +636,14 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
 
         {/* ── Footer note ── */}
         <p className="mt-6 text-center text-[11.5px] leading-relaxed text-[#9099ab]">
-          Pricing heuristic · {" "}
-          <span className="text-[#4f6df5]">$0.031/vCPU-hr</span> + <span className="text-[#4f6df5]">$0.004/GB-hr</span> · 730 hrs/month · not linked to cloud billing API
+          {snap?.cost_summary?.cost_source === "opencost" ? (
+            <>Live Azure billing API integration active · values match actual cloud spend</>
+          ) : (
+            <>
+              Pricing heuristic · {" "}
+              <span className="text-[#4f6df5]">$0.031/vCPU-hr</span> + <span className="text-[#4f6df5]">$0.004/GB-hr</span> · 730 hrs/month · not linked to cloud billing API
+            </>
+          )}
         </p>
       </div>
     </div>
