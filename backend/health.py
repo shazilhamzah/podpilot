@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from analyzer import client
+from ai_client import client, get_model_name
 
 def analyze(prompt: str, slice_data: dict) -> str:
     import json
@@ -10,7 +10,7 @@ def analyze(prompt: str, slice_data: dict) -> str:
     
     chat_completion = client.chat.completions.create(
         messages=[{"role": "user", "content": full_prompt}],
-        model=os.getenv("MODEL"),
+        model=get_model_name(),
         temperature=0.2,
         max_tokens=2048,
         response_format={"type": "json_object"},
@@ -116,7 +116,7 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": full_prompt}
         ],
-        model=os.getenv("MODEL"),
+        model=get_model_name(),
         temperature=0.3,
         max_tokens=512,
     )
@@ -141,7 +141,7 @@ def get_security_solution(title: str, description: str, remediation: str, resour
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": full_prompt}
         ],
-        model=os.getenv("MODEL"),
+        model=get_model_name(),
         temperature=0.2,
         max_tokens=512,
     )

@@ -1,15 +1,7 @@
 import os
 import json
 import time
-from groq import Groq
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv(override=True)
-
-# Configure Groq Client
-api_key = os.getenv("AI_API_KEY")
-client = Groq(api_key=api_key)
+from ai_client import client, get_model_name
 
 SYSTEM_PROMPT = """
 You are PodPilot, an expert Kubernetes infrastructure analyst.
@@ -66,7 +58,7 @@ def analyze_all_categories(snapshot: dict) -> dict:
                         "content": prompt,
                     }
                 ],
-                model=os.getenv("MODEL"),
+                model=get_model_name(),
                 temperature=0.2,
                 max_tokens=2048,
                 response_format={"type": "json_object"},
@@ -82,7 +74,7 @@ def analyze_all_categories(snapshot: dict) -> dict:
                 time.sleep(delay)
                 delay *= backoff_factor
                 continue
-            return {cat: f"Error contacting Groq API: {e}" for cat in questions}
+            return {cat: f"Error contacting Azure OpenAI API: {e}" for cat in questions}
             
     return {cat: "Max retries exceeded" for cat in questions}
 
@@ -95,7 +87,7 @@ if __name__ == "__main__":
     clean = sanitize(enrich_with_cost(snapshot()))
     print(f"Snapshot ready — {len(clean.get('pods', []))} pods loaded\n")
 
-    print("Sending snapshot to Groq for full analysis...\n")
+    print("Sending snapshot to Azure OpenAI for full analysis...\n")
     results = analyze_all_categories(clean)
 
     categories = ["cost", "reliability", "performance", "storage", "security"]

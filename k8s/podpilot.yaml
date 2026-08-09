@@ -30,8 +30,8 @@ metadata:
   namespace: podpilot
 type: Opaque
 stringData:
-  AI_API_KEY: "REPLACE_WITH_YOUR_AI_API_KEY"
-  MODEL: "REPLACE_WITH_THE_MODEL"
+  AZURE_OPENAI_ENDPOINT: "REPLACE_WITH_YOUR_AZURE_OPENAI_ENDPOINT"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
   MONGO_DB_URI: "REPLACE_WITH_YOUR_MONGODB_ATLAS_URI"
   # Optional: give the cluster a friendly display name in PodPilot UI
   CLUSTER_NAME: "my-cluster"

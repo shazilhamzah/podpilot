@@ -42,11 +42,11 @@ import json
 import time
 from datetime import datetime, timezone
 from dotenv import load_dotenv
-from groq import Groq, RateLimitError
+from ai_client import client, get_model_name
+from openai import RateLimitError
 
 load_dotenv(override=True)
 SNAPSHOT_DIR = "snapshots"
-groq_client = Groq(api_key=os.environ.get("AI_API_KEY"))
 
 
 from db import db
@@ -218,8 +218,8 @@ def explain_drift(diff_summary: str, max_retries: int = 3) -> str:
 
     for attempt in range(max_retries):
         try:
-            response = groq_client.chat.completions.create(
-                model=os.getenv("MODEL"),
+            response = client.chat.completions.create(
+                model=get_model_name(),
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": diff_summary},

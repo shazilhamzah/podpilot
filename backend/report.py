@@ -41,9 +41,9 @@ def _report_summary(r):
     fallback='Monthly waste %s from %0.0f to %0.0f; %d workload improvements were identified, and the current security score is %d/100.' % (word,r['cost']['waste']['before'],r['cost']['waste']['after'],len(r['cost']['fixed']),r['security']['after']['score'])
     if not os.getenv('AI_API_KEY'): return fallback
     try:
-        from groq import Groq
+        from ai_client import client, get_model_name
         facts={'cost':r['cost'],'security':r['security'],'drift_changes':len(r['drift']['changes'])}
-        x=Groq(api_key=os.getenv('AI_API_KEY')).chat.completions.create(model=os.getenv('MODEL'),temperature=.2,max_tokens=140,messages=[{'role':'system','content':'Write one concise executive summary paragraph for a Kubernetes impact report.'},{'role':'user','content':'Use only these facts; mention cost/waste, security score, and reliability: '+str(facts)}])
+        x=client.chat.completions.create(model=get_model_name(),temperature=.2,max_tokens=140,messages=[{'role':'system','content':'Write one concise executive summary paragraph for a Kubernetes impact report.'},{'role':'user','content':'Use only these facts; mention cost/waste, security score, and reliability: '+str(facts)}])
         return x.choices[0].message.content.strip()
     except Exception: return fallback
 
