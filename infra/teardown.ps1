@@ -1,6 +1,6 @@
 # =============================================================================
-# PodPilot — Infrastructure Teardown
-# Ticket: 01 — Provision Core Azure Infrastructure
+# PodPilot - Infrastructure Teardown
+# Ticket: 01 - Provision Core Azure Infrastructure
 #
 # Deletes ALL resources created by infra/provision.ps1.
 # Intended for dev/CI environments only.
@@ -24,10 +24,11 @@ if (Test-Path $OutputsFile) {
 $ResourceGroup = if ($env:RESOURCE_GROUP) { $env:RESOURCE_GROUP } else { "rg-podpilot" }
 
 Write-Host ""
-Write-Host "⚠️  PodPilot Infrastructure Teardown" -ForegroundColor Red
-Write-Host "======================================" -ForegroundColor Red
+Write-Host "PodPilot Infrastructure Teardown" -ForegroundColor Red
+Write-Host "=================================" -ForegroundColor Red
 Write-Host ""
-Write-Host "This will permanently delete resource group '$ResourceGroup' and ALL resources inside it:" -ForegroundColor Yellow
+Write-Host "WARNING: This will permanently delete resource group '$ResourceGroup'" -ForegroundColor Yellow
+Write-Host "and ALL resources inside it:" -ForegroundColor Yellow
 Write-Host "  - AKS cluster"
 Write-Host "  - Azure Cosmos DB for MongoDB account"
 Write-Host "  - All associated networking and storage"
@@ -35,7 +36,7 @@ Write-Host ""
 
 # ── Confirmation ──────────────────────────────────────────────────────────────
 if ($env:PODPILOT_FORCE_TEARDOWN -ne "1") {
-    $Confirm = Read-Host "  Type the resource group name to confirm deletion"
+    $Confirm = Read-Host "Type the resource group name to confirm deletion"
     if ($Confirm -ne $ResourceGroup) {
         Write-Host "[ERROR] Confirmation did not match. Aborting." -ForegroundColor Red
         exit 1
@@ -67,7 +68,7 @@ if (Test-Path $OutputsFile) {
 
 Write-Host ""
 Write-Host "[OK]    Deletion initiated for resource group '$ResourceGroup'." -ForegroundColor Green
-Write-Host "[INFO]  Azure is deleting resources in the background — this typically takes 5–10 minutes." -ForegroundColor Cyan
+Write-Host "[INFO]  Azure is deleting resources in the background (typically 5-10 minutes)." -ForegroundColor Cyan
 Write-Host "[INFO]  Check progress with:" -ForegroundColor Cyan
 Write-Host "          az group show --name $ResourceGroup --query properties.provisioningState"
 Write-Host ""
