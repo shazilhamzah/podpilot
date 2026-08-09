@@ -12,4 +12,9 @@ __pycache__/
 *.log
 logs.txt
 .agents/
+.claude/
 skills-lock.json
+docs/
+
+# Infra provisioning outputs — contains secrets (Cosmos DB connection string etc.)
+infra/.infra-outputs
