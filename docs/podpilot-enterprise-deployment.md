@@ -97,6 +97,7 @@ service/podpilot created
 
 This is the **only** place you put the credentials we sent you. Never commit this to git.
 
+**For macOS / Linux (Bash/Zsh):**
 ```bash
 # Replace the two placeholder values with what we sent you
 kubectl create secret generic podpilot-secrets \
@@ -105,6 +106,18 @@ kubectl create secret generic podpilot-secrets \
   --from-literal=AZURE_OPENAI_DEPLOYMENT="gpt-4o" \
   --from-literal=MONGO_DB_URI="<MONGO_DB_URI_WE_SENT_YOU>" \
   --from-literal=AI_API_KEY="<AZURE_OPENAI_API_KEY_WE_SENT_YOU>" \
+  --from-literal=CLUSTER_NAME="<your-cluster-name>"
+```
+
+**For Windows (PowerShell):**
+```powershell
+# Replace the two placeholder values with what we sent you
+kubectl create secret generic podpilot-secrets `
+  --namespace podpilot `
+  --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1" `
+  --from-literal=AZURE_OPENAI_DEPLOYMENT="gpt-4o" `
+  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_WE_SENT_YOU>" `
+  --from-literal=AI_API_KEY="<AZURE_OPENAI_API_KEY_WE_SENT_YOU>" `
   --from-literal=CLUSTER_NAME="<your-cluster-name>"
 ```
 
