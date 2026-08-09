@@ -47,6 +47,8 @@ metadata:
   namespace: podpilot
   labels:
     app.kubernetes.io/name: podpilot
+  annotations:
+    azure.workload.identity/client-id: "8274b921-a9d1-4b73-a2e3-84e958e87dea"
 
 ---
 # -----------------------------------------------------------------------------
@@ -128,6 +130,7 @@ spec:
       labels:
         app: podpilot
         app.kubernetes.io/name: podpilot
+        azure.workload.identity/use: "true"
     spec:
       serviceAccountName: podpilot
       containers:
