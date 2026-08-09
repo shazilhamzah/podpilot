@@ -172,15 +172,13 @@ function CostSourceBadge({ source }) {
   if (source === "opencost") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-[#50e3c2]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#50e3c2] uppercase tracking-wider border border-[#50e3c2]/20 shadow-[0_0_8px_rgba(80,227,194,0.15)]">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#50e3c2]"></span>
-        Live Azure Cost
+        🟢 Live Azure Cost
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#f5a623] uppercase tracking-wider border border-[#f5a623]/20">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#f5a623]"></span>
-      Estimated
+      🟡 Estimated
     </span>
   );
 }

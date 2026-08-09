@@ -39,9 +39,10 @@ def _fixed_cost(a,b):
 def _report_summary(r):
     d=r['cost']['waste']['change']; word='fell' if d<0 else 'rose' if d>0 else 'held steady'
     fallback='Monthly waste %s from %0.0f to %0.0f; %d workload improvements were identified, and the current security score is %d/100.' % (word,r['cost']['waste']['before'],r['cost']['waste']['after'],len(r['cost']['fixed']),r['security']['after']['score'])
-    if not os.getenv('AI_API_KEY'): return fallback
+    client = get_ai_client()
+    if not client:
+        return fallback
     try:
-        from ai_client import client, get_model_name
         facts={'cost':r['cost'],'security':r['security'],'drift_changes':len(r['drift']['changes'])}
         x=client.chat.completions.create(model=get_model_name(),temperature=.2,max_tokens=140,messages=[{'role':'system','content':'Write one concise executive summary paragraph for a Kubernetes impact report.'},{'role':'user','content':'Use only these facts; mention cost/waste, security score, and reliability: '+str(facts)}])
         return x.choices[0].message.content.strip()

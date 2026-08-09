@@ -44,7 +44,7 @@ def enrich_with_cost(snapshot: dict) -> dict:
     enriched = copy.deepcopy(snapshot)
     
     opencost_data = fetch_opencost_data()
-    summary_source = "opencost" if opencost_data is not None else "estimated"
+    summary_source = "opencost" if opencost_data else "estimated"
     
     total_cost_per_hour = 0.0
     total_wasted_per_hour = 0.0
