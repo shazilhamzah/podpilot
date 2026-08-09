@@ -99,6 +99,9 @@ This is the **only** place you put the credentials we sent you. Never commit thi
 
 **For macOS / Linux (Bash/Zsh):**
 ```bash
+# Optional: remove existing secret if you are updating credentials
+kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
+
 # Replace the two placeholder values with what we sent you
 kubectl create secret generic podpilot-secrets \
   --namespace podpilot \
@@ -111,6 +114,9 @@ kubectl create secret generic podpilot-secrets \
 
 **For Windows (PowerShell):**
 ```powershell
+# Optional: remove existing secret if you are updating credentials
+kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
+
 # Replace the two placeholder values with what we sent you
 kubectl create secret generic podpilot-secrets `
   --namespace podpilot `
