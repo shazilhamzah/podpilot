@@ -87,8 +87,14 @@ def _serialize_snapshot(doc: dict) -> dict:
 async def list_report_snapshots() -> dict:
     if db is None:
         raise HTTPException(status_code=503, detail="Snapshot storage is unavailable.")
-    cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1}).sort("captured_at", -1)
-    return {"snapshots": [_serialize_snapshot(doc) async for doc in cursor]}
+    cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1})
+    results = []
+    async for doc in cursor:
+        doc["id"] = str(doc["_id"])
+        del doc["_id"]
+        results.append(doc)
+    results.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
+    return {"snapshots": results}
 
 
 async def build_impact_report(from_id: str, to_id: str) -> dict:

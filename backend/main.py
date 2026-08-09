@@ -390,8 +390,7 @@ async def get_snapshot(snapshot_id: Optional[str] = None):
 @app.get("/history")
 async def get_history():
     try:
-        # Fetch snapshots sorted by captured_at descending, including analysis_results to see what is cached
-        cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1, "analysis_results": 1}).sort("captured_at", -1)
+        cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1, "analysis_results": 1})
         history = []
         async for doc in cursor:
             doc["id"] = str(doc["_id"])
@@ -400,6 +399,7 @@ async def get_history():
             if "analysis_results" in doc:
                 del doc["analysis_results"]
             history.append(doc)
+        history.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
         return {"snapshots": history}
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/history"})
@@ -630,7 +630,12 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
                 cache["analysis_results"] = {}
             else:
                 print("[CACHE] Metrics updated, structure unchanged — keeping analysis cache on refresh.")
-                latest_doc = await db.snapshots.find_one({}, sort=[("captured_at", -1)])
+                docs = await db.snapshots.find({}, {"analysis_results": 1, "captured_at": 1}).to_list(length=None)
+                if docs:
+                    docs.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
+                    latest_doc = docs[0]
+                else:
+                    latest_doc = None
                 db_analysis = latest_doc.get("analysis_results", {}) if latest_doc else {}
                 analysis_results_to_save = {**db_analysis, **cache.get("analysis_results", {})}
         else:
