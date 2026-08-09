@@ -146,6 +146,8 @@ spec:
           env:
             - name: SERVE_FRONTEND
               value: "true"
+            - name: OPENCOST_ENDPOINT
+              value: "http://cost-analysis-agent.kube-system.svc.cluster.local:9003/allocation/compute"
           resources:
             requests:
               cpu: "250m"
