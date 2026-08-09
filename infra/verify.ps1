@@ -96,8 +96,14 @@ if ($LASTEXITCODE -ne 0) {
         Write-Fail "Workload Identity NOT enabled (needs --enable-workload-identity)"
     }
 
-    $caAddon = $aks.addonProfiles.PSObject.Properties["costAnalysis"]
-    if ($caAddon -and $caAddon.Value.enabled -eq $true) {
+    $caEnabled = $false
+    if ($null -ne $aks.addonProfiles) {
+        $caAddon = $aks.addonProfiles.PSObject.Properties["costAnalysis"]
+        if ($null -ne $caAddon -and $caAddon.Value.enabled -eq $true) {
+            $caEnabled = $true
+        }
+    }
+    if ($caEnabled) {
         Write-Pass "Cost Analysis add-on enabled"
     } else {
         Write-Fail "Cost Analysis add-on NOT enabled (needs --enable-cost-analysis)"
