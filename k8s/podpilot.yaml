@@ -30,7 +30,7 @@ metadata:
   namespace: podpilot
 type: Opaque
 stringData:
-  AZURE_OPENAI_ENDPOINT: "REPLACE_WITH_YOUR_AZURE_OPENAI_ENDPOINT"
+  AZURE_OPENAI_ENDPOINT: "https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1"
   AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
   MONGO_DB_URI: "mongodb://podpilot-cosmos:REDACTED@podpilot-cosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@podpilot-cosmos@"
   # Optional: give the cluster a friendly display name in PodPilot UI

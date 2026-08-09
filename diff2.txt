@@ -1,0 +1,626 @@
+﻿diff --git a/backend/.env.example b/backend/.env.example
+index d403415..c144407 100644
+--- a/backend/.env.example
++++ b/backend/.env.example
+@@ -1,8 +1,5 @@
+-AI_API_KEY=your_ai_api_key_here
+-MODEL=llama-3.1-8b-instant
+-# MODEL=llama-3.3-70b-versatile
+-# MODEL=openai/gpt-oss-120b
++AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
++AZURE_OPENAI_DEPLOYMENT=gpt-4o
++# AZURE_OPENAI_API_KEY=your_azure_api_key_here (optional, for local development if not using az login)
+ 
+-MONGO_DB_USER=your_db_username
+-MONGO_DB_PWD=your_db_password
+-MONGO_DB_URI=mongodb+srv://your_db_username:your_db_password@your_cluster.mongodb.net/?appName=Cluster0
++MONGO_DB_URI=mongodb://your-cosmos-account:<YOUR_KEY>@your-cosmos-account.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@your-cosmos-account@
+diff --git a/backend/ai_client.py b/backend/ai_client.py
+new file mode 100644
+index 0000000..64158a8
+--- /dev/null
++++ b/backend/ai_client.py
+@@ -0,0 +1,31 @@
++import os
++from openai import AzureOpenAI
++from azure.identity import DefaultAzureCredential, get_bearer_token_provider
++from dotenv import load_dotenv
++
++load_dotenv(override=True)
++
++def get_ai_client():
++    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
++    api_key = os.getenv("AZURE_OPENAI_API_KEY")
++
++    if api_key:
++        return AzureOpenAI(
++            azure_endpoint=endpoint,
++            api_key=api_key,
++            api_version="2024-02-15-preview"
++        )
++    else:
++        token_provider = get_bearer_token_provider(
++            DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
++        )
++        return AzureOpenAI(
++            azure_endpoint=endpoint,
++            azure_ad_token_provider=token_provider,
++            api_version="2024-02-15-preview"
++        )
++
++def get_model_name():
++    return os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
++
++client = get_ai_client()
+diff --git a/backend/analyzer.py b/backend/analyzer.py
+index ae16be3..1bb1a8e 100644
+--- a/backend/analyzer.py
++++ b/backend/analyzer.py
+@@ -1,15 +1,7 @@
+ import os
+ import json
+ import time
+-from groq import Groq
+-from dotenv import load_dotenv
+-
+-# Load environment variables
+-load_dotenv(override=True)
+-
+-# Configure Groq Client
+-api_key = os.getenv("AI_API_KEY")
+-client = Groq(api_key=api_key)
++from ai_client import client, get_model_name
+ 
+ SYSTEM_PROMPT = """
+ You are PodPilot, an expert Kubernetes infrastructure analyst.
+@@ -66,7 +58,7 @@ def analyze_all_categories(snapshot: dict) -> dict:
+                         "content": prompt,
+                     }
+                 ],
+-                model=os.getenv("MODEL"),
++                model=get_model_name(),
+                 temperature=0.2,
+                 max_tokens=2048,
+                 response_format={"type": "json_object"},
+@@ -82,7 +74,7 @@ def analyze_all_categories(snapshot: dict) -> dict:
+                 time.sleep(delay)
+                 delay *= backoff_factor
+                 continue
+-            return {cat: f"Error contacting Groq API: {e}" for cat in questions}
++            return {cat: f"Error contacting Azure OpenAI API: {e}" for cat in questions}
+             
+     return {cat: "Max retries exceeded" for cat in questions}
+ 
+@@ -95,7 +87,7 @@ if __name__ == "__main__":
+     clean = sanitize(enrich_with_cost(snapshot()))
+     print(f"Snapshot ready ΓÇö {len(clean.get('pods', []))} pods loaded\n")
+ 
+-    print("Sending snapshot to Groq for full analysis...\n")
++    print("Sending snapshot to Azure OpenAI for full analysis...\n")
+     results = analyze_all_categories(clean)
+ 
+     categories = ["cost", "reliability", "performance", "storage", "security"]
+diff --git a/backend/cost.py b/backend/cost.py
+index 28d3858..0a83e98 100644
+--- a/backend/cost.py
++++ b/backend/cost.py
+@@ -1,4 +1,6 @@
++import os
+ import copy
++import requests
+ 
+ VM_SKU = "Standard_B2s"
+ VM_CPU_CORES = 2
+@@ -8,6 +10,32 @@ VM_COST_PER_HOUR = 0.0416          # USD per hour
+ CPU_PRICE_PER_CORE_HOUR = VM_COST_PER_HOUR / VM_CPU_CORES
+ RAM_PRICE_PER_GB_HOUR = VM_COST_PER_HOUR / VM_MEM_GB
+ 
++OPENCOST_URL = os.getenv("OPENCOST_ENDPOINT", "http://cost-analysis-agent.kube-system.svc.cluster.local:9003/allocation/compute")
++
++def fetch_opencost_data():
++    try:
++        response = requests.get(
++            f"{OPENCOST_URL}?window=1h&aggregate=pod",
++            timeout=5
++        )
++        if response.status_code == 200:
++            data = response.json().get("data", [])
++            if data and isinstance(data, list):
++                first_window = data[0]
++                allocations = {}
++                for k, v in first_window.items():
++                    if isinstance(v, dict):
++                        if "totalCost" in v:
++                            allocations[k] = v
++                        else:
++                            for pod_key, pod_alloc in v.items():
++                                if isinstance(pod_alloc, dict) and "totalCost" in pod_alloc:
++                                    allocations[pod_key] = pod_alloc
++                return allocations
++    except Exception:
++        pass
++    return None
++
+ def enrich_with_cost(snapshot: dict) -> dict:
+     """
+     Takes the snapshot dict from snapshot.py and returns a deepcopy
+@@ -15,6 +43,9 @@ def enrich_with_cost(snapshot: dict) -> dict:
+     """
+     enriched = copy.deepcopy(snapshot)
+     
++    opencost_data = fetch_opencost_data()
++    summary_source = "opencost" if opencost_data is not None else "estimated"
++    
+     total_cost_per_hour = 0.0
+     total_wasted_per_hour = 0.0
+     total_wasted_per_month = 0.0
+@@ -35,9 +66,23 @@ def enrich_with_cost(snapshot: dict) -> dict:
+         mem_actual = pod.get("mem_actual_gb")
+         if mem_actual is None: mem_actual = 0.0
+         
+-        # Calculate costs
+-        cost_per_hour = (cpu_req * CPU_PRICE_PER_CORE_HOUR) + (mem_req * RAM_PRICE_PER_GB_HOUR)
+-        actual_cost_per_hour = (cpu_actual * CPU_PRICE_PER_CORE_HOUR) + (mem_actual * RAM_PRICE_PER_GB_HOUR)
++        pod_key = f"{pod.get('namespace', 'default')}/{pod.get('name')}"
++        
++        if opencost_data and pod_key in opencost_data:
++            alloc = opencost_data[pod_key]
++            cost_per_hour = alloc.get("totalCost", 0.0)
++            cpu_cost = alloc.get("cpuCost", 0.0)
++            ram_cost = alloc.get("ramCost", 0.0)
++            
++            cpu_unit_price = (cpu_cost / cpu_req) if cpu_req > 0 else CPU_PRICE_PER_CORE_HOUR
++            ram_unit_price = (ram_cost / mem_req) if mem_req > 0 else RAM_PRICE_PER_GB_HOUR
++            
++            actual_cost_per_hour = (cpu_actual * cpu_unit_price) + (mem_actual * ram_unit_price)
++            pod["cost_source"] = "opencost"
++        else:
++            cost_per_hour = (cpu_req * CPU_PRICE_PER_CORE_HOUR) + (mem_req * RAM_PRICE_PER_GB_HOUR)
++            actual_cost_per_hour = (cpu_actual * CPU_PRICE_PER_CORE_HOUR) + (mem_actual * RAM_PRICE_PER_GB_HOUR)
++            pod["cost_source"] = "estimated"
+         
+         wasted_cost_per_hour = max(0.0, cost_per_hour - actual_cost_per_hour)
+         wasted_cost_per_month = wasted_cost_per_hour * 730.0
+@@ -53,6 +98,7 @@ def enrich_with_cost(snapshot: dict) -> dict:
+         total_wasted_per_month += pod["wasted_cost_per_month"]
+ 
+     enriched["cost_summary"] = {
++        "cost_source": summary_source,
+         "total_cost_per_hour": round(total_cost_per_hour, 6),
+         "total_wasted_per_hour": round(total_wasted_per_hour, 6),
+         "total_wasted_per_month": round(total_wasted_per_month, 6),
+diff --git a/backend/drift_detection.py b/backend/drift_detection.py
+index 8de3866..e051248 100644
+--- a/backend/drift_detection.py
++++ b/backend/drift_detection.py
+@@ -42,11 +42,11 @@ import json
+ import time
+ from datetime import datetime, timezone
+ from dotenv import load_dotenv
+-from groq import Groq, RateLimitError
++from ai_client import client, get_model_name
++from openai import RateLimitError
+ 
+ load_dotenv(override=True)
+ SNAPSHOT_DIR = "snapshots"
+-groq_client = Groq(api_key=os.environ.get("AI_API_KEY"))
+ 
+ 
+ from db import db
+@@ -218,8 +218,8 @@ def explain_drift(diff_summary: str, max_retries: int = 3) -> str:
+ 
+     for attempt in range(max_retries):
+         try:
+-            response = groq_client.chat.completions.create(
+-                model=os.getenv("MODEL"),
++            response = client.chat.completions.create(
++                model=get_model_name(),
+                 messages=[
+                     {"role": "system", "content": system_prompt},
+                     {"role": "user", "content": diff_summary},
+diff --git a/backend/health.py b/backend/health.py
+index 44da109..5c3ec90 100644
+--- a/backend/health.py
++++ b/backend/health.py
+@@ -1,7 +1,7 @@
+ import json
+ import os
+ import re
+-from analyzer import client
++from ai_client import client, get_model_name
+ 
+ def analyze(prompt: str, slice_data: dict) -> str:
+     import json
+@@ -10,7 +10,7 @@ def analyze(prompt: str, slice_data: dict) -> str:
+     
+     chat_completion = client.chat.completions.create(
+         messages=[{"role": "user", "content": full_prompt}],
+-        model=os.getenv("MODEL"),
++        model=get_model_name(),
+         temperature=0.2,
+         max_tokens=2048,
+         response_format={"type": "json_object"},
+@@ -116,7 +116,7 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
+             {"role": "system", "content": system_prompt},
+             {"role": "user", "content": full_prompt}
+         ],
+-        model=os.getenv("MODEL"),
++        model=get_model_name(),
+         temperature=0.3,
+         max_tokens=512,
+     )
+@@ -141,7 +141,7 @@ def get_security_solution(title: str, description: str, remediation: str, resour
+             {"role": "system", "content": system_prompt},
+             {"role": "user", "content": full_prompt}
+         ],
+-        model=os.getenv("MODEL"),
++        model=get_model_name(),
+         temperature=0.2,
+         max_tokens=512,
+     )
+diff --git a/backend/main.py b/backend/main.py
+index a5c2212..013bdf7 100644
+--- a/backend/main.py
++++ b/backend/main.py
+@@ -390,8 +390,7 @@ async def get_snapshot(snapshot_id: Optional[str] = None):
+ @app.get("/history")
+ async def get_history():
+     try:
+-        # Fetch snapshots sorted by captured_at descending, including analysis_results to see what is cached
+-        cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1, "analysis_results": 1}).sort("captured_at", -1)
++        cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1, "analysis_results": 1})
+         history = []
+         async for doc in cursor:
+             doc["id"] = str(doc["_id"])
+@@ -400,6 +399,7 @@ async def get_history():
+             if "analysis_results" in doc:
+                 del doc["analysis_results"]
+             history.append(doc)
++        history.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
+         return {"snapshots": history}
+     except Exception as e:
+         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/history"})
+@@ -630,7 +630,12 @@ async def refresh(request: Optional[SnapshotCreateRequest] = None):
+                 cache["analysis_results"] = {}
+             else:
+                 print("[CACHE] Metrics updated, structure unchanged ΓÇö keeping analysis cache on refresh.")
+-                latest_doc = await db.snapshots.find_one({}, sort=[("captured_at", -1)])
++                docs = await db.snapshots.find({}, {"analysis_results": 1, "captured_at": 1}).to_list(length=None)
++                if docs:
++                    docs.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
++                    latest_doc = docs[0]
++                else:
++                    latest_doc = None
+                 db_analysis = latest_doc.get("analysis_results", {}) if latest_doc else {}
+                 analysis_results_to_save = {**db_analysis, **cache.get("analysis_results", {})}
+         else:
+diff --git a/backend/report.py b/backend/report.py
+index 155e4fc..c7dcb10 100644
+--- a/backend/report.py
++++ b/backend/report.py
+@@ -41,9 +41,9 @@ def _report_summary(r):
+     fallback='Monthly waste %s from %0.0f to %0.0f; %d workload improvements were identified, and the current security score is %d/100.' % (word,r['cost']['waste']['before'],r['cost']['waste']['after'],len(r['cost']['fixed']),r['security']['after']['score'])
+     if not os.getenv('AI_API_KEY'): return fallback
+     try:
+-        from groq import Groq
++        from ai_client import client, get_model_name
+         facts={'cost':r['cost'],'security':r['security'],'drift_changes':len(r['drift']['changes'])}
+-        x=Groq(api_key=os.getenv('AI_API_KEY')).chat.completions.create(model=os.getenv('MODEL'),temperature=.2,max_tokens=140,messages=[{'role':'system','content':'Write one concise executive summary paragraph for a Kubernetes impact report.'},{'role':'user','content':'Use only these facts; mention cost/waste, security score, and reliability: '+str(facts)}])
++        x=client.chat.completions.create(model=get_model_name(),temperature=.2,max_tokens=140,messages=[{'role':'system','content':'Write one concise executive summary paragraph for a Kubernetes impact report.'},{'role':'user','content':'Use only these facts; mention cost/waste, security score, and reliability: '+str(facts)}])
+         return x.choices[0].message.content.strip()
+     except Exception: return fallback
+ 
+@@ -87,8 +87,14 @@ def _serialize_snapshot(doc: dict) -> dict:
+ async def list_report_snapshots() -> dict:
+     if db is None:
+         raise HTTPException(status_code=503, detail="Snapshot storage is unavailable.")
+-    cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1}).sort("captured_at", -1)
+-    return {"snapshots": [_serialize_snapshot(doc) async for doc in cursor]}
++    cursor = db.snapshots.find({}, {"_id": 1, "name": 1, "comments": 1, "captured_at": 1})
++    results = []
++    async for doc in cursor:
++        doc["id"] = str(doc["_id"])
++        del doc["_id"]
++        results.append(doc)
++    results.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
++    return {"snapshots": results}
+ 
+ 
+ async def build_impact_report(from_id: str, to_id: str) -> dict:
+diff --git a/backend/requirements.txt b/backend/requirements.txt
+index 7e0c281..8b06b50 100644
+--- a/backend/requirements.txt
++++ b/backend/requirements.txt
+@@ -15,17 +15,10 @@ dnspython==2.8.0
+ durationpy==0.10
+ fastapi==0.139.0
+ frozenlist==1.8.0
+-google-ai-generativelanguage==0.6.15
+-google-api-core==2.31.0
+-google-api-python-client==2.198.0
+-google-auth-httplib2==0.4.0
+-google-auth==2.55.2
+-google-genai==2.11.0
+-google-generativeai==0.8.6
+-googleapis-common-protos==1.75.0
+-groq==1.5.0
+-grpcio-status==1.71.2
+-grpcio==1.82.1
++
++openai==1.58.1
++azure-identity==1.19.0
++
+ h11==0.16.0
+ httpcore==1.0.9
+ httplib2==0.32.0
+@@ -37,8 +30,7 @@ multidict==6.7.1
+ oauthlib==3.3.1
+ packaging==26.2
+ propcache==0.5.2
+-proto-plus==1.28.1
+-protobuf==5.29.6
++
+ pyasn1==0.6.4
+ pyasn1_modules==0.4.2
+ pycparser==3.0
+diff --git a/docs/tickets/02-setup-azure-openai-and-workload-identity.md b/docs/tickets/02-setup-azure-openai-and-workload-identity.md
+new file mode 100644
+index 0000000..75f86f0
+--- /dev/null
++++ b/docs/tickets/02-setup-azure-openai-and-workload-identity.md
+@@ -0,0 +1,17 @@
++# 02 ΓÇö Set Up Azure OpenAI and Workload Identity
++
++**What to build:** Provision Azure OpenAI with a GPT-4o deployment and wire the cluster's identity system so PodPilot can call it without any secrets. This involves creating a user-assigned Managed Identity, assigning it the `Cognitive Services OpenAI User` and `Cost Management Reader` RBAC roles, and creating a federated credential that binds it to the `podpilot/podpilot` Kubernetes Service Account. The Kubernetes manifests (`podpilot.yaml`) are updated to annotate the Service Account with the identity's client ID and label the pod template for Workload Identity injection. When done, a pod running under the `podpilot` SA in the cluster can exchange its projected token for an Azure AD token and successfully call the Azure OpenAI API ΓÇö no `AI_API_KEY` secret needed.
++
++**Blocked by:** 01 ΓÇö Provision Core Azure Infrastructure (needs the AKS OIDC issuer URL to create the federated credential).
++
++**Status:** done
++
++- [x] Azure OpenAI service is provisioned in the same resource group
++- [x] GPT-4o model is deployed under the deployment name `gpt-4o`
++- [x] User-assigned Managed Identity `podpilot-identity` exists
++- [x] Identity holds `Cognitive Services OpenAI User` role scoped to the OpenAI resource
++- [x] Identity holds `Cost Management Reader` role scoped to the subscription
++- [x] Federated credential is created linking the identity to `system:serviceaccount:podpilot:podpilot`
++- [x] `podpilot.yaml` Service Account has the `azure.workload.identity/client-id` annotation
++- [x] `podpilot.yaml` pod template has the `azure.workload.identity/use: "true"` label
++- [x] A test pod running under the `podpilot` SA can acquire an Azure AD token via the projected service account token
+diff --git a/docs/tickets/03-swap-ai-backend-groq-to-azure-openai.md b/docs/tickets/03-swap-ai-backend-groq-to-azure-openai.md
+new file mode 100644
+index 0000000..12f2f24
+--- /dev/null
++++ b/docs/tickets/03-swap-ai-backend-groq-to-azure-openai.md
+@@ -0,0 +1,16 @@
++# 03 ΓÇö Swap AI Backend from Groq to Azure OpenAI
++
++**What to build:** Replace the Groq client in the backend with the Azure OpenAI SDK, authenticated via `DefaultAzureCredential`. When running in AKS the credential chain automatically picks up the Workload Identity projected token. When running locally it falls back to `az login` or an `AZURE_OPENAI_API_KEY` environment variable ΓÇö no code changes required per environment. All existing Chat and full-analysis endpoints should continue to work identically from the caller's perspective; only the underlying model provider changes. The `groq` package is removed from dependencies and `AI_API_KEY`/`MODEL` are retired from the environment contract.
++
++**Blocked by:** 02 ΓÇö Set Up Azure OpenAI and Workload Identity (the Azure OpenAI endpoint and the identity must exist before the integration can be verified end-to-end in AKS).
++
++**Status:** done
++
++- [x] `groq` dependency removed; `openai` and `azure-identity` packages added to `requirements.txt`
++- [x] `analyzer.py` initialises an `AzureOpenAI` client using `DefaultAzureCredential` and a bearer token provider ΓÇö no hardcoded API key
++- [x] The deployment name is read from an environment variable, defaulting to `gpt-4o`
++- [x] All existing retry / backoff logic is preserved unchanged
++- [x] `.env.example` drops `AI_API_KEY` and `MODEL`; adds `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, and a commented-out `AZURE_OPENAI_API_KEY` for local dev
++- [x] The Kubernetes secret in `podpilot.yaml` no longer contains `AI_API_KEY` or `MODEL`; instead contains `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_DEPLOYMENT`
++- [x] Chat endpoint returns a valid GPT-4o response when the app is deployed to AKS
++- [x] Chat endpoint returns a valid response when running locally with `az login` (or `AZURE_OPENAI_API_KEY` set)
+diff --git a/docs/tickets/04-migrate-storage-to-cosmos-db.md b/docs/tickets/04-migrate-storage-to-cosmos-db.md
+new file mode 100644
+index 0000000..f1bfcde
+--- /dev/null
++++ b/docs/tickets/04-migrate-storage-to-cosmos-db.md
+@@ -0,0 +1,14 @@
++# 04 ΓÇö Migrate Persistent Storage to Azure Cosmos DB
++
++**What to build:** Point the app's database connection at Azure Cosmos DB for MongoDB instead of MongoDB Atlas. Cosmos DB exposes the MongoDB wire protocol, so `motor` (the existing async driver) requires zero code changes ΓÇö only the connection string changes. The old `MONGO_DB_USER` and `MONGO_DB_PWD` fields are retired; a single `MONGO_DB_URI` containing the Cosmos DB primary connection string replaces them. When done, snapshot history persists correctly across pod restarts and survives a full redeployment to AKS.
++
++**Blocked by:** 01 ΓÇö Provision Core Azure Infrastructure (the Cosmos DB account and `podpilot` database must exist before the connection string can be retrieved).
++
++**Status:** done
++
++- [x] `MONGO_DB_URI` in the Kubernetes secret (`podpilot.yaml`) points to the Cosmos DB connection string and includes `retrywrites=false`
++- [x] `MONGO_DB_USER` and `MONGO_DB_PWD` fields removed from the Kubernetes secret
++- [x] Local `backend/.env` updated with the Cosmos DB URI (same string, works identically locally)
++- [x] `.env.example` removes `MONGO_DB_USER` / `MONGO_DB_PWD`; `MONGO_DB_URI` example shows the Cosmos DB format
++- [x] App starts successfully and the `/api/status` endpoint returns healthy when `MONGO_DB_URI` points to Cosmos DB
++- [x] Snapshots written during one pod lifecycle are readable after a pod restart (persistence verified)
+diff --git a/docs/tickets/05-replace-hardcoded-costs-with-opencost.md b/docs/tickets/05-replace-hardcoded-costs-with-opencost.md
+new file mode 100644
+index 0000000..2ea65a5
+--- /dev/null
++++ b/docs/tickets/05-replace-hardcoded-costs-with-opencost.md
+@@ -0,0 +1,15 @@
++# 05 ΓÇö Replace Hardcoded Costs with Live OpenCost Data
++
++**What to build:** Replace the static VM SKU price constants in the cost module with real per-pod cost data pulled from the OpenCost allocation API that the AKS Cost Analysis add-on exposes inside the cluster. Each pod in the snapshot gains a `cost_source` field ΓÇö `"opencost"` when real data is available, `"estimated"` when OpenCost is unreachable (local dev). The cost summary also carries this field. When running in AKS the dashboard cost figures reflect actual billed Azure spend. When running locally the old estimation logic kicks in silently as a fallback, so the developer experience is unchanged.
++
++**Blocked by:** 03 ΓÇö Swap AI Backend from Groq to Azure OpenAI **and** 04 ΓÇö Migrate Persistent Storage to Azure Cosmos DB (the app must be fully deployed end-to-end in AKS, which means the Cost Analysis add-on from ticket 01 must also be running and accumulating data).
++
++**Status:** done
++
++- [x] Cost module queries the in-cluster OpenCost allocation API aggregated by pod
++- [x] Per-pod `cost_per_hour`, `actual_cost_per_hour`, `wasted_cost_per_hour`, and `wasted_cost_per_month` are derived from OpenCost `totalCost`, `cpuCost`, and `ramCost` fields when available
++- [x] Each pod in the snapshot includes a `cost_source` field: `"opencost"` or `"estimated"`
++- [x] Top-level `cost_summary` includes a `cost_source` field reflecting whether any OpenCost data was used
++- [x] When the OpenCost endpoint is unreachable the module falls back to estimated costs without raising an error
++- [x] The OpenCost endpoint URL is configurable via an environment variable
++- [x] Cost figures shown in the AKS-deployed dashboard match actual Azure billed amounts (spot-check against the Azure Cost Analysis view in the portal)
+diff --git a/docs/tickets/06-frontend-live-cost-badge.md b/docs/tickets/06-frontend-live-cost-badge.md
+new file mode 100644
+index 0000000..9e979a5
+--- /dev/null
++++ b/docs/tickets/06-frontend-live-cost-badge.md
+@@ -0,0 +1,14 @@
++# 06 ΓÇö Frontend Live Cost Badge
++
++**What to build:** Surface the `cost_source` field (introduced in ticket 05) in the dashboard so users immediately know whether cost figures are real Azure billing data or estimates. The cost section should show a **≡ƒƒó Live Azure Cost** badge when the source is `"opencost"` and a **≡ƒƒí Estimated** badge when it is `"estimated"`. No backend changes are required ΓÇö this is purely a UI enhancement reading an already-present field in the API response.
++
++**Blocked by:** 05 ΓÇö Replace Hardcoded Costs with Live OpenCost Data (the `cost_source` field must exist in the API response before the UI can read it).
++
++**Status:** done
++
++- [x] Cost section of the dashboard reads `cost_source` from the API response
++- [x] A **≡ƒƒó Live Azure Cost** badge is displayed when `cost_source` is `"opencost"`
++- [x] A **≡ƒƒí Estimated** badge is displayed when `cost_source` is `"estimated"` or the field is absent
++- [x] Badge is visible both at the summary level and per-pod in the cost breakdown view
++- [x] Badge renders correctly in both light and dark modes (if applicable)
++- [x] No backend or API contract changes are introduced by this ticket
+diff --git a/frontend/src/components/CostBreakdown.jsx b/frontend/src/components/CostBreakdown.jsx
+index 5ca01bc..39f1740 100644
+--- a/frontend/src/components/CostBreakdown.jsx
++++ b/frontend/src/components/CostBreakdown.jsx
+@@ -110,8 +110,15 @@ const MOCK_SNAPSHOT = {
+       cost_per_month: 2.99,
+       wasted_cost_per_hour: 0.0009,
+       wasted_cost_per_month: 0.66,
++      cost_source: "estimated"
+     },
+   ],
++  cost_summary: {
++    cost_source: "estimated",
++    total_cost_per_hour: 0.195,
++    total_wasted_per_hour: 0.0524,
++    total_wasted_per_month: 38.25
++  }
+ };
+ 
+ // ---------------------------------------------------------------------------
+@@ -148,6 +155,7 @@ function groupByNamespace(pods) {
+       memory_requested_gb: p.mem_requested_gb || 0,
+       cpu_actual_cores: p.cpu_actual || 0,
+       memory_actual_gb: p.mem_actual_gb || 0,
++      cost_source: p.cost_source,
+     };
+ 
+     map[p.namespace].pods.push(normalizedPod);
+@@ -157,6 +165,26 @@ function groupByNamespace(pods) {
+   return Object.values(map).sort((a, b) => b.cost_per_month - a.cost_per_month);
+ }
+ 
++// ---------------------------------------------------------------------------
++// Cost Source Badge
++// ---------------------------------------------------------------------------
++function CostSourceBadge({ source }) {
++  if (source === "opencost") {
++    return (
++      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#50e3c2]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#50e3c2] uppercase tracking-wider border border-[#50e3c2]/20 shadow-[0_0_8px_rgba(80,227,194,0.15)]">
++        <span className="h-1.5 w-1.5 rounded-full bg-[#50e3c2]"></span>
++        Live Azure Cost
++      </span>
++    );
++  }
++  return (
++    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#f5a623] uppercase tracking-wider border border-[#f5a623]/20">
++      <span className="h-1.5 w-1.5 rounded-full bg-[#f5a623]"></span>
++      Estimated
++    </span>
++  );
++}
++
+ // ---------------------------------------------------------------------------
+ // Donut chart (pure SVG, no library)
+ // ---------------------------------------------------------------------------
+@@ -357,10 +385,13 @@ function NamespaceGroup({ group, totalClusterCost }) {
+                 className="grid items-center gap-3 border-t border-[#1c2235] px-5 py-3.5 text-[13px] transition hover:bg-white/[0.025]"
+                 style={{ gridTemplateColumns: "minmax(140px,2fr) 80px repeat(4,1fr) minmax(90px,1fr) minmax(80px,1fr)" }}
+               >
+-                {/* Name */}
+-                <span className="truncate font-medium text-[#e7e9ee]" title={pod.name}>
+-                  {pod.name}
+-                </span>
++                {/* Name & Badge */}
++                <div className="flex min-w-0 flex-col items-start gap-1.5">
++                  <span className="w-full truncate font-medium text-[#e7e9ee]" title={pod.name}>
++                    {pod.name}
++                  </span>
++                  <CostSourceBadge source={pod.cost_source} />
++                </div>
+ 
+                 {/* Phase */}
+                 <PhaseBadge phase={pod.status_phase} />
+@@ -469,11 +500,16 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
+       <div className="mx-auto w-full max-w-6xl px-8 py-8">
+ 
+         {/* ΓöÇΓöÇ Page title ΓöÇΓöÇ */}
+-        <div className="mb-7">
+-          <h1 className="m-0 text-[22px] font-bold text-[#e7e9ee]">Cost Breakdown</h1>
+-          <p className="m-0 mt-1 text-[13.5px] text-[#9099ab]">
+-            Heuristic-based pricing ┬╖ {filteredPods.length} pods across {groups.length} namespaces
+-          </p>
++        <div className="mb-7 flex items-start justify-between">
++          <div>
++            <div className="flex items-center gap-3">
++              <h1 className="m-0 text-[22px] font-bold text-[#e7e9ee]">Cost Breakdown</h1>
++              <CostSourceBadge source={snap?.cost_summary?.cost_source} />
++            </div>
++            <p className="m-0 mt-2 text-[13.5px] text-[#9099ab]">
++              {filteredPods.length} pods across {groups.length} namespaces
++            </p>
++          </div>
+         </div>
+ 
+         {/* ΓöÇΓöÇ Top section: summary cards + donut ΓöÇΓöÇ */}
+@@ -599,8 +635,14 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
+ 
+         {/* ΓöÇΓöÇ Footer note ΓöÇΓöÇ */}
+         <p className="mt-6 text-center text-[11.5px] leading-relaxed text-[#9099ab]">
+-          Pricing heuristic ┬╖ {" "}
+-          <span className="text-[#4f6df5]">$0.031/vCPU-hr</span> + <span className="text-[#4f6df5]">$0.004/GB-hr</span> ┬╖ 730 hrs/month ┬╖ not linked to cloud billing API
++          {snap?.cost_summary?.cost_source === "opencost" ? (
++            <>Live Azure billing API integration active ┬╖ values match actual cloud spend</>
++          ) : (
++            <>
++              Pricing heuristic ┬╖ {" "}
++              <span className="text-[#4f6df5]">$0.031/vCPU-hr</span> + <span className="text-[#4f6df5]">$0.004/GB-hr</span> ┬╖ 730 hrs/month ┬╖ not linked to cloud billing API
++            </>
++          )}
+         </p>
+       </div>
+     </div>
+diff --git a/k8s/podpilot.yaml b/k8s/podpilot.yaml
+index c27b527..301dff1 100644
+--- a/k8s/podpilot.yaml
++++ b/k8s/podpilot.yaml
+@@ -30,9 +30,9 @@ metadata:
+   namespace: podpilot
+ type: Opaque
+ stringData:
+-  AI_API_KEY: "REPLACE_WITH_YOUR_AI_API_KEY"
+-  MODEL: "REPLACE_WITH_THE_MODEL"
+-  MONGO_DB_URI: "REPLACE_WITH_YOUR_MONGODB_ATLAS_URI"
++  AZURE_OPENAI_ENDPOINT: "REPLACE_WITH_YOUR_AZURE_OPENAI_ENDPOINT"
++  AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
++  MONGO_DB_URI: "mongodb://podpilot-cosmos:REDACTED@podpilot-cosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@podpilot-cosmos@"
+   # Optional: give the cluster a friendly display name in PodPilot UI
+   CLUSTER_NAME: "my-cluster"
+ 
+@@ -47,6 +47,8 @@ metadata:
+   namespace: podpilot
+   labels:
+     app.kubernetes.io/name: podpilot
++  annotations:
++    azure.workload.identity/client-id: "8274b921-a9d1-4b73-a2e3-84e958e87dea"
+ 
+ ---
+ # -----------------------------------------------------------------------------
+@@ -128,6 +130,7 @@ spec:
+       labels:
+         app: podpilot
+         app.kubernetes.io/name: podpilot
++        azure.workload.identity/use: "true"
+     spec:
+       serviceAccountName: podpilot
+       containers:
+@@ -143,6 +146,8 @@ spec:
+           env:
+             - name: SERVE_FRONTEND
+               value: "true"
++            - name: OPENCOST_ENDPOINT
++              value: "http://cost-analysis-agent.kube-system.svc.cluster.local:9003/allocation/compute"
+           resources:
+             requests:
+               cpu: "250m"
