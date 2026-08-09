@@ -162,7 +162,6 @@ function groupByNamespace(pods) {
     map[p.namespace].cost_per_month += cost_per_month;
     map[p.namespace].wasted_cost_per_month += wasted_cost_per_month;
   });
-  });
   return Object.values(map).sort((a, b) => b.cost_per_month - a.cost_per_month);
 }
 
