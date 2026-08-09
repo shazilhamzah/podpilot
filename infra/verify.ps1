@@ -97,8 +97,8 @@ if ($LASTEXITCODE -ne 0) {
     }
 
     $caEnabled = $false
-    if ($null -ne $aks.addonProfiles) {
-        $caAddon = $aks.addonProfiles.PSObject.Properties["costAnalysis"]
+    if ($null -ne $aks.metricsProfile) {
+        $caAddon = $aks.metricsProfile.PSObject.Properties["costAnalysis"]
         if ($null -ne $caAddon -and $caAddon.Value.enabled -eq $true) {
             $caEnabled = $true
         }
@@ -122,29 +122,29 @@ if ($readyCount -ge 2) {
     Write-Fail "Only $readyCount node(s) Ready - expected at least 2"
 }
 
-# ── Criterion 4a: OpenCost pods ───────────────────────────────────────────────
+# ── Criterion 4a - OpenCost pods running ──────────────────────────────────────
 Write-Section "Criterion 4a - OpenCost pods running"
 
-$opencostPods = kubectl get pods -n kube-system -l app=opencost --no-headers 2>&1
-$runningCount = ($opencostPods | Where-Object { $_ -match "Running" }).Count
+$opencostPods = kubectl get pods -n kube-system --no-headers 2>&1
+$runningCount = ($opencostPods | Where-Object { $_ -match "cost-analysis-agent.*Running" }).Count
 
 if ($runningCount -ge 1) {
-    Write-Pass "$runningCount OpenCost pod(s) running in kube-system"
+    Write-Pass "$runningCount OpenCost (cost-analysis-agent) pod(s) running"
 } else {
-    Write-Fail "No OpenCost pods found running in kube-system"
+    Write-Fail "No cost-analysis-agent pods found running in kube-system"
 }
 
-# ── Criterion 4b: OpenCost HTTP probe ─────────────────────────────────────────
+# ── Criterion 4b - OpenCost HTTP probe ────────────────────────────────────────
 Write-Section "Criterion 4b - OpenCost allocation endpoint responds"
 
 $pfJob = Start-Job -ScriptBlock {
-    kubectl port-forward -n kube-system svc/opencost 19090:9090 2>&1 | Out-Null
+    kubectl port-forward -n kube-system deployment/cost-analysis-agent 9003:9003 2>&1 | Out-Null
 }
 Start-Sleep -Seconds 4
 
 try {
     $response = Invoke-WebRequest `
-        -Uri "http://localhost:19090/allocation/compute?window=1d&aggregate=pod&accumulate=false" `
+        -Uri "http://localhost:9003/allocation/compute?window=1d&aggregate=pod&accumulate=false" `
         -TimeoutSec 5 `
         -UseBasicParsing `
         -ErrorAction Stop
