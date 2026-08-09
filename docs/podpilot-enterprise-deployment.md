@@ -98,11 +98,14 @@ service/podpilot created
 This is the **only** place you put the credentials we sent you. Never commit this to git.
 
 **For macOS / Linux (Bash/Zsh):**
-```bash
-# Optional: remove existing secret if you are updating credentials
-kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
 
-# Replace the two placeholder values with what we sent you
+Optional: remove existing secret if you are updating credentials
+```bash
+kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
+```
+
+Replace the two placeholder values with what we sent you:
+```bash
 kubectl create secret generic podpilot-secrets \
   --namespace podpilot \
   --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1" \
@@ -113,11 +116,14 @@ kubectl create secret generic podpilot-secrets \
 ```
 
 **For Windows (PowerShell):**
-```powershell
-# Optional: remove existing secret if you are updating credentials
-kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
 
-# Replace the two placeholder values with what we sent you
+Optional: remove existing secret if you are updating credentials
+```powershell
+kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
+```
+
+Replace the two placeholder values with what we sent you:
+```powershell
 kubectl create secret generic podpilot-secrets `
   --namespace podpilot `
   --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1" `
