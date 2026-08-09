@@ -33,6 +33,7 @@ def sanitize(snapshot: dict) -> dict:
     # Cost Summary
     cs = snapshot.get("cost_summary", {})
     clean["cost_summary"] = {
+        "cost_source": str(cs.get("cost_source", "estimated")),
         "total_cost_per_hour": float(cs.get("total_cost_per_hour", 0.0)),
         "total_wasted_per_hour": float(cs.get("total_wasted_per_hour", 0.0)),
         "total_wasted_per_month": float(cs.get("total_wasted_per_month", 0.0))
@@ -54,6 +55,7 @@ def sanitize(snapshot: dict) -> dict:
             "name": str(pod.get("name") or ""),
             "namespace": str(pod.get("namespace") or ""),
             "status": str(pod.get("status") or ""),
+            "status_phase": str(pod.get("status_phase") or pod.get("status") or ""),
             "restart_count": int(pod.get("restart_count") or 0),
             "cpu_requested": float(pod.get("cpu_requested") or 0.0),
             "mem_requested_gb": float(pod.get("mem_requested_gb") or 0.0),
@@ -64,6 +66,7 @@ def sanitize(snapshot: dict) -> dict:
             "cost_per_hour": float(pod.get("cost_per_hour") or 0.0),
             "wasted_cost_per_hour": float(pod.get("wasted_cost_per_hour") or 0.0),
             "wasted_cost_per_month": float(pod.get("wasted_cost_per_month") or 0.0),
+            "cost_source": str(pod.get("cost_source") or "estimated"),
             "images": pod.get("images", []),
             "probes": pod.get("probes", []),
             "lifecycle_hooks": pod.get("lifecycle_hooks", []),

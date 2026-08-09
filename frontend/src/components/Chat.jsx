@@ -113,7 +113,8 @@ export default function Chat({ selectedSnapshotId, hideSystemK8s }) {
       const backendUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
       const payload = { 
         question: trimmed,
-        hide_system: hideSystemK8s
+        hide_system: hideSystemK8s,
+        history: messages.filter(m => m.role !== "assistant" || m.content !== "Hi, I'm your cluster copilot. Ask me anything about cost, reliability, performance, storage, or security for this cluster.") // Send history excluding the initial hardcoded greeting
       };
       if (selectedSnapshotId) {
         payload.snapshot_id = selectedSnapshotId;

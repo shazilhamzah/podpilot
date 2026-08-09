@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wasteful-api
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wasteful-api
+  template:
+    metadata:
+      labels:
+        app: wasteful-api
+    spec:
+      containers:
+      - name: api
+        image: nginx:alpine
+        resources:
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: crashing-worker
+  namespace: default
+spec:
+  containers:
+  - name: worker
+    image: busybox
+    command: ["sh", "-c", "echo 'Starting up...'; sleep 2; exit 1"]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: insecure-db
+  namespace: default
+spec:
+  containers:
+  - name: db
+    image: redis:alpine
+    securityContext:
+      privileged: true
+      runAsUser: 0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lost-frontend
+  namespace: default
+spec:
+  containers:
+  - name: frontend
+    image: nginx:this-tag-does-not-exist-at-all
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: greedy-ml-job
+  namespace: default
+spec:
+  containers:
+  - name: trainer
+    image: python:3.11-slim
+    command: ["python", "-c", "import time; time.sleep(99999)"]
+    resources:
+      requests:
+        cpu: "99"
+        memory: "200Gi"

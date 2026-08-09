@@ -12,22 +12,28 @@ def analyze(prompt: str, slice_data: dict) -> str:
         messages=[{"role": "user", "content": full_prompt}],
         model=get_model_name(),
         temperature=0.2,
-        max_tokens=2048,
+        max_tokens=4096,
         response_format={"type": "json_object"},
     )
     return chat_completion.choices[0].message.content
 
-def chat_with_cluster(prompt: str, snapshot: dict) -> str:
+def chat_with_cluster(prompt: str, snapshot: dict, history: list = None) -> str:
     import json
     prompt_lower = prompt.lower()
 
     # Determine which sections are relevant based on the question
-    wants_nodes    = any(k in prompt_lower for k in ["cpu", "memory", "node", "utiliz", "capacity", "ram"])
-    wants_cost     = any(k in prompt_lower for k in ["cost", "waste", "price", "spend", "money", "expensive", "budget"])
-    wants_security = any(k in prompt_lower for k in ["security", "root", "limit", "port", "expose", "nodeport", "network"])
-    wants_storage  = any(k in prompt_lower for k in ["pvc", "storage", "disk", "volume", "persistent"])
-    wants_deploy   = any(k in prompt_lower for k in ["deploy", "replica", "scale", "rollout", "restart", "crashloop", "crash"])
-    wants_pods     = any(k in prompt_lower for k in ["pod", "container", "running", "pending", "failed", "status"])
+    # (Checking history messages too just in case)
+    combined_text = prompt_lower
+    if history:
+        for msg in history:
+            combined_text += " " + str(msg.get("content", "")).lower()
+
+    wants_nodes    = any(k in combined_text for k in ["cpu", "memory", "node", "utiliz", "capacity", "ram"])
+    wants_cost     = any(k in combined_text for k in ["cost", "waste", "price", "spend", "money", "expensive", "budget"])
+    wants_security = any(k in combined_text for k in ["security", "root", "limit", "port", "expose", "nodeport", "network"])
+    wants_storage  = any(k in combined_text for k in ["pvc", "storage", "disk", "volume", "persistent"])
+    wants_deploy   = any(k in combined_text for k in ["deploy", "replica", "scale", "rollout", "restart", "crashloop", "crash"])
+    wants_pods     = any(k in combined_text for k in ["pod", "container", "running", "pending", "failed", "status"])
 
     # Always include at least pods if nothing matched
     if not any([wants_nodes, wants_cost, wants_security, wants_storage, wants_deploy, wants_pods]):
@@ -60,65 +66,60 @@ def chat_with_cluster(prompt: str, snapshot: dict) -> str:
             } for n in snapshot.get("nodes", [])
         ]
 
-    if wants_pods or wants_cost or wants_security or wants_deploy:
-        pod_fields = ["name", "namespace", "status", "status_phase", "restart_count",
-                      "cpu_requested", "cpu_actual", "mem_requested_gb", "mem_actual_gb",
-                      "cost_per_hour", "wasted_cost_per_month",
-                      "has_cpu_limit", "has_mem_limit", "runs_as_root",
-                      "images", "probes", "lifecycle_hooks"]
+    if wants_pods:
         slice_data["pods"] = [
-            {k: p.get(k) for k in pod_fields if p.get(k) is not None}
-            for p in snapshot.get("pods", [])
+            {
+                "name": p.get("name"),
+                "namespace": p.get("namespace"),
+                "status": p.get("status"),
+                "status_phase": p.get("status_phase"),
+                "cpu_requested": p.get("cpu_requested"),
+                "mem_requested_gb": p.get("mem_requested_gb"),
+                "cpu_actual": p.get("cpu_actual"),
+                "mem_actual_gb": p.get("mem_actual_gb"),
+                "cost_source": p.get("cost_source", "estimated"),
+            } for p in snapshot.get("pods", [])
         ]
 
     if wants_deploy:
-        slice_data["deployments"] = [
-            {"name": d.get("name"), "namespace": d.get("namespace"),
-             "desired_replicas": d.get("desired_replicas"), "ready_replicas": d.get("ready_replicas")}
-            for d in snapshot.get("deployments", [])
-        ]
+        slice_data["deployments"] = snapshot.get("deployments", [])
+        slice_data["replicasets"] = snapshot.get("replicasets", [])
 
     if wants_security:
-        slice_data["services"] = [
-            {"name": s.get("name"), "namespace": s.get("namespace"), "type": s.get("type"), "port": s.get("port")}
-            for s in snapshot.get("services", [])
-        ]
+        slice_data["services"] = snapshot.get("services", [])
+        slice_data["secrets"] = [{"name": s.get("name"), "namespace": s.get("namespace")} for s in snapshot.get("secrets", [])]
+        slice_data["networkpolicies"] = snapshot.get("networkpolicies", [])
+    elif any(k in combined_text for k in ["service", "port"]):
+        slice_data["services"] = snapshot.get("services", [])
 
     if wants_storage:
-        slice_data["pvcs"] = [
-            {"name": pvc.get("name"), "namespace": pvc.get("namespace"),
-             "status": pvc.get("status"), "capacity_gb": pvc.get("capacity_gb"), "is_attached": pvc.get("is_attached")}
-            for pvc in snapshot.get("pvcs", [])
-        ]
-
-    slice_data["statefulsets"] = snapshot.get("statefulsets", [])
-    slice_data["daemonsets"] = snapshot.get("daemonsets", [])
-    slice_data["jobs"] = snapshot.get("jobs", [])
-    slice_data["cronjobs"] = snapshot.get("cronjobs", [])
-    slice_data["ingresses"] = snapshot.get("ingresses", [])
-    slice_data["networkpolicies"] = snapshot.get("networkpolicies", [])
-    slice_data["configmaps"] = snapshot.get("configmaps", [])
-    slice_data["secrets"] = snapshot.get("secrets", [])
-    slice_data["hpas"] = snapshot.get("hpas", [])
-    slice_data["replicasets"] = snapshot.get("replicasets", [])
+        slice_data["pvcs"] = snapshot.get("pvcs", [])
 
     snapshot_json = json.dumps(slice_data, default=str)
 
     system_prompt = (
         "You are a Kubernetes cluster copilot with access to a live cluster snapshot. "
         "Answer the user's question using the data provided. Be concise and practical. "
-        "Use bullet points or bold for clarity. Calculate percentages when asked about utilization."
+        "Use bullet points or bold for clarity. Calculate percentages when asked about utilization.\n\n"
+        f"Cluster snapshot:\n{snapshot_json}"
     )
-    full_prompt = f"Cluster snapshot:\n{snapshot_json}\n\nQuestion: {prompt}"
+    
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    if history:
+        for msg in history:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role in ["user", "assistant"] and content:
+                messages.append({"role": role, "content": content})
+                
+    messages.append({"role": "user", "content": prompt})
 
     chat_completion = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": full_prompt}
-        ],
+        messages=messages,
         model=get_model_name(),
         temperature=0.3,
-        max_tokens=512,
+        max_tokens=1024,
     )
     return chat_completion.choices[0].message.content
 
@@ -143,7 +144,7 @@ def get_security_solution(title: str, description: str, remediation: str, resour
         ],
         model=get_model_name(),
         temperature=0.2,
-        max_tokens=512,
+        max_tokens=1024,
     )
     return chat_completion.choices[0].message.content
 
@@ -298,19 +299,43 @@ def slice_security(snapshot: dict) -> dict:
 # ═══════════════════════════════════════
 
 def parse_ai_json(response: str) -> dict:
-    # strip markdown code fences if present
     cleaned = re.sub(r"```json|```", "", response).strip()
     try:
-        return json.loads(cleaned)
+        data = json.loads(cleaned)
     except json.JSONDecodeError:
-        # attempt to extract first { } block
         match = re.search(r"\{.*\}", cleaned, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group())
+                data = json.loads(match.group())
             except:
-                pass
-    return {"issues": [], "summary": "Failed to parse AI response."}
+                return {"issues": [], "summary": "Failed to parse AI response."}
+        else:
+            return {"issues": [], "summary": "Failed to parse AI response."}
+
+    # Resilient extraction
+    if "analysis" in data and isinstance(data["analysis"], dict):
+        data = data["analysis"]
+        
+    issues = data.get("issues", [])
+    if isinstance(issues, dict):
+        # AI returned a dict of categories instead of a flat list
+        flat_issues = []
+        for cat, items in issues.items():
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict):
+                        flat_issues.append({
+                            "severity": item.get("severity", "warning"),
+                            "title": item.get("title", cat.replace("_", " ").title()),
+                            "description": item.get("description", f"Detected {cat}"),
+                            "affected_resource": item.get("affected_resource") or item.get("name") or "Unknown"
+                        })
+        issues = flat_issues
+
+    return {
+        "issues": issues if isinstance(issues, list) else [],
+        "summary": data.get("summary", "Analysis completed.")
+    }
 
 # ═══════════════════════════════════════
 # SECTION 2 — FIVE FOCUSED ANALYZERS
@@ -421,31 +446,40 @@ Respond ONLY in this JSON format, no other text:
 
 def analyze_security(snapshot: dict) -> dict:
     slice_data = slice_security(snapshot)
-    prompt = """You are analyzing the security posture of a Kubernetes cluster.
-Services exposed as NodePort or LoadBalancer are warnings or critical
-depending on what they expose. Pods with no CPU or memory limits are
-warnings as they can be exploited for resource exhaustion.
-Flag every NodePort service as critical.
-Flag every pod missing resource limits as warning.
-Flag every pod where runs_as_root is true as a warning.
-
-Respond ONLY in this JSON format, no other text:
-{
-  "issues": [
-    {
-      "severity": "critical" | "warning" | "info",
-      "title": "short title under 10 words",
-      "description": "one sentence explanation",
-      "affected_resource": "exact pod/deployment/service/pvc name"
+    
+    issues = []
+    
+    for s in slice_data.get("services", []):
+        if s.get("type") in ["NodePort", "LoadBalancer"]:
+            issues.append({
+                "severity": "critical",
+                "title": f"Exposed {s.get('type')} service",
+                "description": f"Service {s.get('name')} is exposed as {s.get('type')}, which may pose security risks.",
+                "affected_resource": s.get("name")
+            })
+            
+    for p in slice_data.get("pods", []):
+        if not p.get("has_cpu_limit") or not p.get("has_mem_limit"):
+            issues.append({
+                "severity": "warning",
+                "title": "Pod missing resource limits",
+                "description": f"Pod {p.get('name')} lacks CPU and memory limits, risking resource exhaustion.",
+                "affected_resource": p.get("name")
+            })
+        if p.get("runs_as_root"):
+            issues.append({
+                "severity": "warning",
+                "title": "Pod runs as root",
+                "description": f"Pod {p.get('name')} runs as root, increasing security risks.",
+                "affected_resource": p.get("name")
+            })
+            
+    summary = f"Detected {len(issues)} security issues including exposed services and pods running with root privileges or missing resource limits."
+    
+    return {
+        "issues": issues,
+        "summary": summary
     }
-  ],
-  "summary": "one sentence overall summary of this category"
-}"""
-    response = analyze(prompt, slice_data)
-    parsed = parse_ai_json(response)
-    if "issues" not in parsed:
-        return {"issues": [], "summary": "Security analysis failed to parse."}
-    return parsed
 
 # ═══════════════════════════════════════
 # SECTION 3 — PROACTIVE HEALTH CHECK

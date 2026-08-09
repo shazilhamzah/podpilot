@@ -11,6 +11,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+# Load env variables before importing local modules that depend on them
+load_dotenv(override=True)
+
 from snapshot import snapshot
 from cost import enrich_with_cost
 from sanitize import sanitize
@@ -35,8 +38,6 @@ from drift_detection import (
 )
 from report import build_impact_report, list_report_snapshots, render_report_html
 
-load_dotenv(override=True)
-
 app = FastAPI(title="PodPilot API", version="1.0.0")
 
 app.add_middleware(
@@ -51,6 +52,7 @@ class ChatRequest(BaseModel):
     question: str
     snapshot_id: Optional[str] = None
     hide_system: Optional[bool] = False
+    history: Optional[list[dict]] = None
 
 class SolutionRequest(BaseModel):
     title: str
@@ -362,6 +364,18 @@ async def root():
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e), "endpoint": "/api/status"})
 
+@app.post("/snapshot/refresh")
+async def force_refresh_snapshot():
+    """Force flush the in-memory cache and fetch a fresh snapshot with OpenCost enrichment."""
+    global _in_memory_cache
+    _in_memory_cache = None
+    try:
+        await db.cache.delete_one({"_id": "app_cache"})
+    except Exception:
+        pass
+    snap = await get_cached_snapshot()
+    return {"status": "refreshed", "cost_source": snap.get("cost_summary", {}).get("cost_source", "unknown")}
+
 @app.get("/snapshot")
 async def get_snapshot(snapshot_id: Optional[str] = None):
     try:
@@ -436,7 +450,7 @@ async def chat(request: ChatRequest):
 
         import asyncio
         loop = asyncio.get_event_loop()
-        ans = await loop.run_in_executor(None, chat_with_cluster, request.question, snap)
+        ans = await loop.run_in_executor(None, chat_with_cluster, request.question, snap, request.history)
         return {
             "question": request.question,
             "answer": ans,

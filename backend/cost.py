@@ -66,10 +66,17 @@ def enrich_with_cost(snapshot: dict) -> dict:
         mem_actual = pod.get("mem_actual_gb")
         if mem_actual is None: mem_actual = 0.0
         
-        pod_key = f"{pod.get('namespace', 'default')}/{pod.get('name')}"
+        pod_name = pod.get('name')
+        pod_ns_name = f"{pod.get('namespace', 'default')}/{pod_name}"
         
-        if opencost_data and pod_key in opencost_data:
-            alloc = opencost_data[pod_key]
+        alloc = None
+        if opencost_data:
+            if pod_name in opencost_data:
+                alloc = opencost_data[pod_name]
+            elif pod_ns_name in opencost_data:
+                alloc = opencost_data[pod_ns_name]
+                
+        if alloc:
             cost_per_hour = alloc.get("totalCost", 0.0)
             cpu_cost = alloc.get("cpuCost", 0.0)
             ram_cost = alloc.get("ramCost", 0.0)

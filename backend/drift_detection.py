@@ -85,15 +85,15 @@ async def load_last_two_snapshots():
     if db is None:
         return None, None
         
-    cursor = db.snapshots.find().sort("captured_at", -1).limit(2)
-    docs = await cursor.to_list(length=2)
+    cursor = db.snapshots.find({}, {"snapshot": 1, "captured_at": 1})
+    docs = await cursor.to_list(length=None)
     
     if len(docs) == 0:
         return None, None
     elif len(docs) == 1:
         return None, docs[0]["snapshot"]
     else:
-        # docs is sorted newest first, so docs[1] is older, docs[0] is newer
+        docs.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
         return docs[1]["snapshot"], docs[0]["snapshot"]
 
 async def load_target_and_previous_snapshot(snapshot_id: str):
@@ -111,15 +111,20 @@ async def load_target_and_previous_snapshot(snapshot_id: str):
         if not target_doc:
             return None, None
             
-        target_time = target_doc.get("captured_at")
-        cursor = db.snapshots.find({"captured_at": {"$lt": target_time}}).sort("captured_at", -1).limit(1)
-        prev_docs = await cursor.to_list(length=1)
+        target_time = target_doc.get("captured_at", "")
+        
+        cursor = db.snapshots.find({}, {"snapshot": 1, "captured_at": 1})
+        all_docs = await cursor.to_list(length=None)
+        
+        prev_docs = [d for d in all_docs if d.get("captured_at", "") < target_time]
+        prev_docs.sort(key=lambda x: x.get("captured_at", ""), reverse=True)
         
         older = prev_docs[0]["snapshot"] if prev_docs else None
         newer = target_doc["snapshot"]
         
         return older, newer
-    except Exception:
+    except Exception as e:
+        print(f"Error in load_target_and_previous_snapshot: {e}")
         return None, None
 
 
@@ -128,7 +133,7 @@ async def load_target_and_previous_snapshot(snapshot_id: str):
 # ---------------------------------------------------------------------------
 
 def _index_by_key(items: list, key_fields: list) -> dict:
-    return {tuple(item[k] for k in key_fields): item for item in items}
+    return {tuple(item.get(k) for k in key_fields): item for item in items}
 
 
 def diff_snapshots(older: dict, newer: dict) -> list:
@@ -157,11 +162,11 @@ def diff_snapshots(older: dict, newer: dict) -> list:
             continue
         if old_p["restart_count"] != new_p["restart_count"]:
             changes.append(
-                f"pod/{new_p['name']} restart count: {old_p['restart_count']} -> {new_p['restart_count']}"
+                f"pod/{new_p['name']} (ns: {new_p['namespace']}) restart count: {old_p['restart_count']} -> {new_p['restart_count']}"
             )
         if old_p["status"] != new_p["status"]:
             changes.append(
-                f"pod/{new_p['name']} status: {old_p['status']} -> {new_p['status']}"
+                f"pod/{new_p['name']} (ns: {new_p['namespace']}) status: {old_p['status']} -> {new_p['status']}"
             )
     for key, old_p in old_pods.items():
         if key not in new_pods:
@@ -174,7 +179,7 @@ def diff_snapshots(older: dict, newer: dict) -> list:
         old_s = old_svcs.get(key)
         if old_s and old_s.get("type") != new_s.get("type"):
             changes.append(
-                f"service/{new_s['name']} type: {old_s.get('type')} -> {new_s.get('type')}"
+                f"service/{new_s.get('name')} (ns: {new_s.get('namespace')}) type: {old_s.get('type')} -> {new_s.get('type')}"
             )
 
     # PVCs: status changes -- using .get() defensively until confirmed
@@ -184,7 +189,7 @@ def diff_snapshots(older: dict, newer: dict) -> list:
         old_v = old_pvcs.get(key)
         if old_v and old_v.get("status") != new_v.get("status"):
             changes.append(
-                f"pvc/{new_v['name']} status: {old_v.get('status')} -> {new_v.get('status')}"
+                f"pvc/{new_v.get('name')} (ns: {new_v.get('namespace')}) status: {old_v.get('status')} -> {new_v.get('status')}"
             )
 
     return changes
