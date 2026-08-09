@@ -13,7 +13,7 @@
 
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # ── Load outputs ──────────────────────────────────────────────────────────────
 $OutputsFile = Join-Path $PSScriptRoot ".infra-outputs.ps1"

@@ -17,7 +17,7 @@
 
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 function Write-Info { param($Msg) Write-Host "[INFO]  $Msg" -ForegroundColor Cyan   }
 function Write-Ok   { param($Msg) Write-Host "[OK]    $Msg" -ForegroundColor Green  }
