@@ -30,7 +30,7 @@ metadata:
   namespace: podpilot
 type: Opaque
 stringData:
-  AZURE_OPENAI_ENDPOINT: "https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1"
+  AZURE_OPENAI_ENDPOINT: "https://foundry-popilot-analysi-resource.services.ai.azure.com/"
   AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
   MONGO_DB_URI: "mongodb://podpilot-cosmos:REDACTED@podpilot-cosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@podpilot-cosmos@"
   # Optional: give the cluster a friendly display name in PodPilot UI
@@ -71,6 +71,7 @@ rules:
       - persistentvolumeclaims
       - events
       - resourcequotas
+      - configmaps
     verbs: ["get", "list", "watch"]
   - apiGroups: ["apps"]
     resources:
@@ -92,6 +93,7 @@ rules:
   - apiGroups: ["networking.k8s.io"]
     resources:
       - ingresses
+      - networkpolicies
     verbs: ["get", "list", "watch"]
 
 ---
@@ -152,6 +154,11 @@ spec:
               value: "true"
             - name: OPENCOST_ENDPOINT
               value: "http://cost-analysis-agent.kube-system.svc.cluster.local:9003/allocation/compute"
+            - name: AZURE_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: podpilot-secrets
+                  key: AI_API_KEY
           resources:
             requests:
               cpu: "250m"

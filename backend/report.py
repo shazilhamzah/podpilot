@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from db import db
 from drift_detection import diff_snapshots
 from security import run_all_checks
+from ai_client import get_ai_client, get_model_name
 
 
 def _report_cost(s):

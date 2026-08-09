@@ -24,7 +24,7 @@ WORKDIR /app
 
 # Install system deps (curl needed for Trivy HTTP calls)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && apt-get install -y --no-install-recommends curl ca-certificates libpango-1.0-0 libpangoft2-1.0-0 libpangocairo-1.0-0 libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

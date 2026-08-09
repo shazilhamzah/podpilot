@@ -10,12 +10,12 @@
 
 ## What you need from us first
 
-Before you start, request the following from the PodPilot team. We will send them securely (e.g. via 1Password, Azure Key Vault share, or an encrypted email):
+Before you start, we will use Azure Workload Identity to securely connect your cluster to our backend without exchanging AI API keys. To set this up:
 
-| Credential | Description |
-|---|---|
-| `AZURE_OPENAI_API_KEY` | API key for our Foundry endpoint |
-| `MONGO_DB_URI` | Connection string to our Cosmos DB (scoped read/write to your tenant's namespace) |
+1. **You provide us:** Your cluster's OIDC Issuer URL (see Step 1 below).
+2. **We provide you:** The Client ID and Tenant ID of our Managed Identity.
+
+If your cluster does not support Azure Workload Identity, we can fallback to providing an `AZURE_OPENAI_API_KEY` and connection strings securely (e.g., via 1Password).
 
 The endpoint and model name are already baked into the manifest — you don't need to know them.
 
@@ -68,11 +68,29 @@ kubectl cluster-info
 # Should print your control plane URL — if it errors, fix this first.
 ```
 
-No Azure CLI, no Helm, no cloud provider account needed.
+No Helm or cloud provider account needed, but you must have permissions to manage your Kubernetes cluster settings.
 
 ---
 
-## Step 1 — Apply the Manifest
+## Step 1 — Enable Azure Workload Identity
+
+Because PodPilot's AI and Storage backends reside in our tenant, we use **Cross-Tenant Azure Workload Identity** to grant your pods access securely without passing API keys.
+
+1. **Enable the Workload Identity and OIDC features** on your AKS cluster:
+   ```bash
+   az aks update -n <cluster-name> -g <resource-group-name> --enable-workload-identity
+   ```
+2. **Retrieve your cluster's OIDC Issuer URL**:
+   ```bash
+   az aks show -n <cluster-name> -g <resource-group-name> --query "oidcIssuerProfile.issuerUrl" -otsv
+   ```
+3. **Send this URL to the PodPilot team.** We will configure our Managed Identity in our tenant to trust your cluster's OIDC issuer. We will then reply with our `Client ID` and `Tenant ID`.
+
+---
+
+---
+
+## Step 2 — Apply the Manifest & Annotate ServiceAccount
 
 Download and apply the all-in-one manifest. This will create the namespace and all required resources:
 
@@ -85,52 +103,48 @@ Expected output:
 ```
 namespace/podpilot created
 serviceaccount/podpilot created
-clusterrole.rbac.authorization.k8s.io/podpilot-reader created
-clusterrolebinding.rbac.authorization.k8s.io/podpilot-reader-binding created
-deployment.apps/podpilot created
-service/podpilot created
+...
+```
+
+Once the ServiceAccount is created, **annotate it** with the `Client ID` and `Tenant ID` provided by the PodPilot team. This tells the Azure Workload Identity webhook to fetch tokens for our tenant instead of yours:
+
+```bash
+kubectl annotate serviceaccount podpilot -n podpilot \
+  azure.workload.identity/client-id="<CLIENT_ID_WE_SENT_YOU>" \
+  azure.workload.identity/tenant-id="<TENANT_ID_WE_SENT_YOU>"
 ```
 
 ---
 
-## Step 2 — Create the Secret
+## Step 3 — Create the Secret
 
-This is the **only** place you put the credentials we sent you. Never commit this to git.
+This is the **only** place you put the credentials we sent you (if any). Never commit this to git. 
+*(If you are fully passwordless via Workload Identity, you may omit the AI_API_KEY depending on how we set up your database).*
 
 **For macOS / Linux (Bash/Zsh):**
 
-Optional: remove existing secret if you are updating credentials
 ```bash
 kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
-```
 
-Replace the two placeholder values with what we sent you:
-```bash
 kubectl create secret generic podpilot-secrets \
   --namespace podpilot \
-  --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1" \
+  --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/" \
   --from-literal=AZURE_OPENAI_DEPLOYMENT="gpt-4o" \
-  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_WE_SENT_YOU>" \
-  --from-literal=AI_API_KEY="<AZURE_OPENAI_API_KEY_WE_SENT_YOU>" \
-  --from-literal=CLUSTER_NAME="<your-cluster-name>"
+  --from-literal=CLUSTER_NAME="<your-cluster-name>" \
+  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>"
 ```
 
 **For Windows (PowerShell):**
 
-Optional: remove existing secret if you are updating credentials
 ```powershell
 kubectl delete secret podpilot-secrets -n podpilot --ignore-not-found
-```
 
-Replace the two placeholder values with what we sent you:
-```powershell
 kubectl create secret generic podpilot-secrets `
   --namespace podpilot `
-  --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/openai/v1" `
+  --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/" `
   --from-literal=AZURE_OPENAI_DEPLOYMENT="gpt-4o" `
-  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_WE_SENT_YOU>" `
-  --from-literal=AI_API_KEY="<AZURE_OPENAI_API_KEY_WE_SENT_YOU>" `
-  --from-literal=CLUSTER_NAME="<your-cluster-name>"
+  --from-literal=CLUSTER_NAME="<your-cluster-name>" `
+  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>"
 ```
 
 > [!TIP]
@@ -155,7 +169,7 @@ kubectl rollout restart deployment/podpilot -n podpilot
 
 ---
 
-## Step 3 — Wait for the Pod to Come Up
+## Step 4 — Wait for the Pod to Come Up
 
 ```bash
 kubectl rollout status deployment/podpilot -n podpilot --timeout=120s
@@ -169,7 +183,7 @@ If it takes more than 2 minutes, jump to [Troubleshooting](#troubleshooting).
 
 ---
 
-## Step 4 — Access the Dashboard
+## Step 5 — Access the Dashboard
 
 ### Option A — LoadBalancer (AKS / EKS / GKE)
 
@@ -300,3 +314,84 @@ No inbound firewall rules are needed.
 ---
 
 *PodPilot · `docker.io/shazilhamzah/podpilot:latest` · Contact: support@podpilot.io*
+
+---
+---
+
+# 🛑 INTERNAL ONLY: PodPilot Team OIDC Setup 🛑
+*(Do not include this section when sending the guide to the client)*
+
+When a client sends you their **OIDC Issuer URL**, run these Azure CLI commands in our tenant to authorize their cluster. This creates a trust relationship so their pods can access our Azure OpenAI resources without an API key.
+
+```bash
+# 1. Set the variables
+IDENTITY_NAME="podpilot-identity"              # Our managed identity name
+RESOURCE_GROUP="rg-podpilot"                   # Our resource group
+CLIENT_OIDC_ISSUER="<URL_RECEIVED_FROM_CLIENT>" # Paste the URL here
+CLIENT_CLUSTER_NAME="acme-corp-prod"           # Used to name the credential
+FEDERATED_CREDENTIAL_NAME="client-${CLIENT_CLUSTER_NAME}"
+
+# 2. Create the federated credential
+# This tells Azure AD to trust tokens signed by the client's cluster
+az identity federated-credential create \
+  --name $FEDERATED_CREDENTIAL_NAME \
+  --identity-name $IDENTITY_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --issuer $CLIENT_OIDC_ISSUER \
+  --subject "system:serviceaccount:podpilot:podpilot" \
+  --audience "api://AzureADTokenExchange"
+
+# 3. Ensure the identity has access to AI and Storage
+PRINCIPAL_ID=$(az identity show --name $IDENTITY_NAME --resource-group $RESOURCE_GROUP --query principalId -otsv)
+az role assignment create --assignee $PRINCIPAL_ID --role "Cognitive Services OpenAI User" --scope "/subscriptions/$(az account show --query id -otsv)/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/foundry-popilot-analysi-resource"
+az cosmosdb sql role assignment create --account-name podpilot-cosmos --resource-group $RESOURCE_GROUP --principal-id $PRINCIPAL_ID --scope "/" --role-definition-id 00000000-0000-0000-0000-000000000002
+
+# 4. Get the IDs and URI to send back to the client
+CLIENT_ID=$(az identity show --name $IDENTITY_NAME --resource-group $RESOURCE_GROUP --query clientId -otsv)
+TENANT_ID=$(az account show --query tenantId -otsv)
+MONGO_DB_URI=$(az cosmosdb keys list -n podpilot-cosmos -g $RESOURCE_GROUP --type connection-strings --query "connectionStrings[0].connectionString" -otsv)
+
+echo -e "\n✅ Success! Send the following to the client:\n"
+echo "Client ID: $CLIENT_ID"
+echo "Tenant ID: $TENANT_ID"
+echo "Mongo DB URI: $MONGO_DB_URI"
+```
+
+### Option B — PowerShell (Windows)
+
+```powershell
+# 1. Set the variables
+$IDENTITY_NAME = "podpilot-identity"              # Our managed identity name
+$RESOURCE_GROUP = "rg-podpilot"                   # Our resource group
+$CLIENT_OIDC_ISSUER = "<URL_RECEIVED_FROM_CLIENT>" # Paste the URL here
+$CLIENT_CLUSTER_NAME = "acme-corp-prod"           # Used to name the credential
+$FEDERATED_CREDENTIAL_NAME = "client-$CLIENT_CLUSTER_NAME"
+
+# 2. Create the federated credential
+# This tells Azure AD to trust tokens signed by the client's cluster
+az identity federated-credential create `
+  --name $FEDERATED_CREDENTIAL_NAME `
+  --identity-name $IDENTITY_NAME `
+  --resource-group $RESOURCE_GROUP `
+  --issuer $CLIENT_OIDC_ISSUER `
+  --subject "system:serviceaccount:podpilot:podpilot" `
+  --audience "api://AzureADTokenExchange"
+
+# 3. Ensure the identity has access to AI and Storage
+$PRINCIPAL_ID = az identity show --name $IDENTITY_NAME --resource-group $RESOURCE_GROUP --query principalId -otsv
+$SUB_ID = az account show --query id -otsv
+az role assignment create --assignee $PRINCIPAL_ID --role "Cognitive Services OpenAI User" --scope "/subscriptions/$SUB_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/foundry-popilot-analysi-resource"
+az cosmosdb sql role assignment create --account-name podpilot-cosmos --resource-group $RESOURCE_GROUP --principal-id $PRINCIPAL_ID --scope "/" --role-definition-id 00000000-0000-0000-0000-000000000002
+
+# 4. Get the IDs and URI to send back to the client
+$CLIENT_ID = az identity show --name $IDENTITY_NAME --resource-group $RESOURCE_GROUP --query clientId -otsv
+$TENANT_ID = az account show --query tenantId -otsv
+$MONGO_DB_URI = az cosmosdb keys list -n podpilot-cosmos -g $RESOURCE_GROUP --type connection-strings --query "connectionStrings[0].connectionString" -otsv
+
+Write-Host ""
+Write-Host "✅ Success! Send the following to the client:" -ForegroundColor Green
+Write-Host ""
+Write-Host "Client ID: $CLIENT_ID"
+Write-Host "Tenant ID: $TENANT_ID"
+Write-Host "Mongo DB URI: $MONGO_DB_URI"
+```
