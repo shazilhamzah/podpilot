@@ -80,6 +80,8 @@ Because PodPilot's AI and Storage backends reside in our tenant, we use **Cross-
    ```bash
    az aks update -n <cluster-name> -g <resource-group-name> --enable-workload-identity
    ```
+   > [!NOTE]
+   > If your cluster is on the **Standard tier or above**, you can also enable the cost analysis addon by appending `--enable-cost-analysis` to the command above. Do not include this flag if your cluster is on the Free tier.
 2. **Retrieve your cluster's OIDC Issuer URL**:
    ```bash
    az aks show -n <cluster-name> -g <resource-group-name> --query "oidcIssuerProfile.issuerUrl" -otsv
@@ -108,9 +110,19 @@ serviceaccount/podpilot created
 
 Once the ServiceAccount is created, **annotate it** with the `Client ID` and `Tenant ID` provided by the PodPilot team. This tells the Azure Workload Identity webhook to fetch tokens for our tenant instead of yours:
 
+**For macOS / Linux (Bash/Zsh):**
+
 ```bash
 kubectl annotate serviceaccount podpilot -n podpilot \
   azure.workload.identity/client-id="<CLIENT_ID_WE_SENT_YOU>" \
+  azure.workload.identity/tenant-id="<TENANT_ID_WE_SENT_YOU>"
+```
+
+**For Windows (PowerShell):**
+
+```powershell
+kubectl annotate serviceaccount podpilot -n podpilot `
+  azure.workload.identity/client-id="<CLIENT_ID_WE_SENT_YOU>" `
   azure.workload.identity/tenant-id="<TENANT_ID_WE_SENT_YOU>"
 ```
 
@@ -131,7 +143,8 @@ kubectl create secret generic podpilot-secrets \
   --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/" \
   --from-literal=AZURE_OPENAI_DEPLOYMENT="gpt-4o" \
   --from-literal=CLUSTER_NAME="<your-cluster-name>" \
-  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>"
+  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>" \
+  --from-literal=AI_API_KEY="<your-ai-api-key>"
 ```
 
 **For Windows (PowerShell):**
@@ -144,7 +157,8 @@ kubectl create secret generic podpilot-secrets `
   --from-literal=AZURE_OPENAI_ENDPOINT="https://foundry-popilot-analysi-resource.openai.azure.com/" `
   --from-literal=AZURE_OPENAI_DEPLOYMENT="gpt-4o" `
   --from-literal=CLUSTER_NAME="<your-cluster-name>" `
-  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>"
+  --from-literal=MONGO_DB_URI="<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>" `
+  --from-literal=AI_API_KEY="<your-ai-api-key>"
 ```
 
 > [!TIP]
