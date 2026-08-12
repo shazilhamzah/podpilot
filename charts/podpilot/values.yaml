@@ -1,22 +1,44 @@
 # PodPilot Helm Chart Values
 
+# ---------------------------------------------------------
+# 1. CORE CREDENTIALS (Required)
+# ---------------------------------------------------------
 clusterName: "my-cluster"
+
+workloadIdentity:
+  clientId: "<CLIENT_ID_PROVIDED_BY_PODPILOT_TEAM>"
+  tenantId: "<TENANT_ID_PROVIDED_BY_PODPILOT_TEAM>"
+
+database:
+  uri: "<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>"
+  dbName: "" # Defaults to clusterName if left empty
+
+basicAuth:
+  enabled: true
+  htpasswd: |-
+    <HTPASSWD_PROVIDED_BY_PODPILOT_TEAM>
+
+# ---------------------------------------------------------
+# 2. INTERNAL BACKEND CONFIGURATION
+# ---------------------------------------------------------
+aiFoundry:
+  endpoint: "<ENDPOINT_PROVIDED_BY_PODPILOT_TEAM>"
+  deployment: "gpt-4o"
+  # Authentication is handled securely via Azure Workload Identity.
+  # No API key is required here.
+  apiKey: ""
+
+# ---------------------------------------------------------
+# 3. ADVANCED CUSTOMIZATIONS (Optional)
+# ---------------------------------------------------------
+nameOverride: ""
+fullnameOverride: ""
+containerName: ""
 
 image:
   repository: shazilhamzah/podpilot
   tag: latest
   pullPolicy: Always
-
-aiFoundry:
-  endpoint: "https://foundry-popilot-analysi-resource.services.ai.azure.com/"
-  deployment: "gpt-4o"
-  apiKey: "" # Provide via --set aiFoundry.apiKey="YOUR_KEY"
-
-database:
-  uri: "mongodb://podpilot-cosmos:REDACTED@podpilot-cosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@podpilot-cosmos@"
-
-workloadIdentity:
-  clientId: "8274b921-a9d1-4b73-a2e3-84e958e87dea"
 
 resources:
   requests:

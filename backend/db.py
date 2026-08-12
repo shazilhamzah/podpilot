@@ -9,7 +9,8 @@ MONGO_URI = os.getenv("MONGO_DB_URI")
 
 if MONGO_URI:
     client = AsyncIOMotorClient(MONGO_URI, tlsCAFile=certifi.where())
-    db = client.podpilot
+    db_name = os.getenv("MONGO_DB_NAME", "podpilot")
+    db = client[db_name]
 else:
     client = None
     db = None
