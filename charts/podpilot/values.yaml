@@ -1,0 +1,31 @@
+# PodPilot Helm Chart Values
+
+clusterName: "my-cluster"
+
+image:
+  repository: shazilhamzah/podpilot
+  tag: latest
+  pullPolicy: Always
+
+aiFoundry:
+  endpoint: "https://foundry-popilot-analysi-resource.services.ai.azure.com/"
+  deployment: "gpt-4o"
+  apiKey: "" # Provide via --set aiFoundry.apiKey="YOUR_KEY"
+
+database:
+  uri: "mongodb://podpilot-cosmos:REDACTED@podpilot-cosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@podpilot-cosmos@"
+
+workloadIdentity:
+  clientId: "8274b921-a9d1-4b73-a2e3-84e958e87dea"
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+service:
+  type: LoadBalancer
+  port: 80
