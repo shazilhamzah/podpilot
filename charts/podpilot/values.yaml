@@ -37,9 +37,9 @@ fullnameOverride: ""
 containerName: ""
 
 image:
-  repository: shazilhamzah/podpilot
-  digest: "sha256:5343a377b2174e4490fa86f1478bdf0fb7b4f41aac717de3f6cc5c4841fa84cf"
-  tag: latest # fallback if digest is removed
+  repository: podpilotregistry.azurecr.io/podpilot
+  digest: ""
+  tag: "v0.1.2"
   pullPolicy: IfNotPresent
 
 resources:
@@ -53,3 +53,22 @@ resources:
 service:
   type: LoadBalancer
   port: 80
+
+ingress:
+  enabled: false
+  className: "nginx"
+  host: ""
+  tls:
+    enabled: false
+    clusterIssuer: "letsencrypt-prod"
+    secretName: "podpilot-tls"
+
+serviceAccount:
+  create: true
+  name: "podpilot" # Hardcoded default for predictable identity federation
+
+opencost:
+  enabled: true # If false, podpilot falls back to CPU/RAM utilization estimates
+  opencost:
+    ui:
+      enabled: false

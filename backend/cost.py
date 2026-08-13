@@ -13,7 +13,7 @@ VM_COST_PER_HOUR = 0.0416          # USD per hour (fallback)
 CPU_PRICE_PER_CORE_HOUR = VM_COST_PER_HOUR / VM_CPU_CORES
 RAM_PRICE_PER_GB_HOUR = VM_COST_PER_HOUR / VM_MEM_GB
 
-OPENCOST_URL = os.getenv("OPENCOST_ENDPOINT", "http://cost-analysis-agent.kube-system.svc.cluster.local:9003/allocation/compute")
+OPENCOST_URL = os.getenv("OPENCOST_ENDPOINT")
 AZURE_SUBSCRIPTION_ID = os.getenv("AZURE_SUBSCRIPTION_ID")
 
 def fetch_azure_actual_cost():
@@ -51,6 +51,8 @@ def fetch_azure_actual_cost():
     return None
 
 def fetch_opencost_data():
+    if not OPENCOST_URL:
+        return None
     try:
         response = requests.get(
             f"{OPENCOST_URL}?window=1h&aggregate=pod",

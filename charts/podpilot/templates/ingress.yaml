@@ -1,4 +1,4 @@
-{{- if .Values.basicAuth.enabled }}
+{{- if or .Values.ingress.enabled .Values.basicAuth.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,13 +7,30 @@ metadata:
     app.kubernetes.io/name: podpilot
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
+    {{- if .Values.basicAuth.enabled }}
     nginx.ingress.kubernetes.io/auth-type: basic
     nginx.ingress.kubernetes.io/auth-secret: {{ include "podpilot.fullname" . }}-basic-auth
     nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    {{- end }}
+    {{- if and .Values.ingress .Values.ingress.tls .Values.ingress.tls.enabled }}
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- if .Values.ingress.tls.clusterIssuer }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.tls.clusterIssuer | quote }}
+    {{- end }}
+    {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ default "nginx" (and .Values.ingress .Values.ingress.className) }}
+  {{- if and .Values.ingress .Values.ingress.tls .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
   rules:
-    - http:
+    - {{- if and .Values.ingress .Values.ingress.host }}
+      host: {{ .Values.ingress.host | quote }}
+      {{- end }}
+      http:
         paths:
           - path: /
             pathType: Prefix

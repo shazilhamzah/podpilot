@@ -32,8 +32,10 @@ spec:
           env:
             - name: SERVE_FRONTEND
               value: "true"
+            {{- if .Values.opencost.enabled }}
             - name: OPENCOST_ENDPOINT
               value: "http://{{ .Release.Name }}-opencost.{{ .Release.Namespace }}.svc.cluster.local:9003/allocation/compute"
+            {{- end }}
             - name: AZURE_OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
