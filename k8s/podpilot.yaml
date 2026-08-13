@@ -30,11 +30,12 @@ metadata:
   namespace: podpilot
 type: Opaque
 stringData:
-  AZURE_OPENAI_ENDPOINT: "https://foundry-popilot-analysi-resource.services.ai.azure.com/"
+  AZURE_OPENAI_ENDPOINT: "https://<YOUR_RESOURCE>.openai.azure.com/"
   AZURE_OPENAI_DEPLOYMENT: "gpt-4o"
-  MONGO_DB_URI: "mongodb://podpilot-cosmos:REDACTED@podpilot-cosmos.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@podpilot-cosmos@"
+  MONGO_DB_URI: "mongodb://<YOUR_COSMOS_ACCOUNT>:<YOUR_KEY>@<YOUR_COSMOS_ACCOUNT>.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000"
   # Optional: give the cluster a friendly display name in PodPilot UI
   CLUSTER_NAME: "my-cluster"
+  AZURE_SUBSCRIPTION_ID: "" # Add your subscription ID here
 
 ---
 # -----------------------------------------------------------------------------
@@ -141,8 +142,8 @@ spec:
       serviceAccountName: podpilot
       containers:
         - name: podpilot
-          image: shazilhamzah/podpilot:latest
-          imagePullPolicy: Always
+          image: shazilhamzah/podpilot@sha256:5343a377b2174e4490fa86f1478bdf0fb7b4f41aac717de3f6cc5c4841fa84cf
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               name: http
@@ -159,6 +160,13 @@ spec:
                 secretKeyRef:
                   name: podpilot-secrets
                   key: AI_API_KEY
+                  optional: true
+            - name: AZURE_SUBSCRIPTION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: podpilot-secrets
+                  key: AZURE_SUBSCRIPTION_ID
+                  optional: true
           resources:
             requests:
               cpu: "250m"

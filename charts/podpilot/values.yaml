@@ -8,6 +8,7 @@ clusterName: "my-cluster"
 workloadIdentity:
   clientId: "<CLIENT_ID_PROVIDED_BY_PODPILOT_TEAM>"
   tenantId: "<TENANT_ID_PROVIDED_BY_PODPILOT_TEAM>"
+  subscriptionId: "<AZURE_SUBSCRIPTION_ID>"
 
 database:
   uri: "<MONGO_DB_URI_PROVIDED_BY_PODPILOT_TEAM>"
@@ -37,8 +38,9 @@ containerName: ""
 
 image:
   repository: shazilhamzah/podpilot
-  tag: latest
-  pullPolicy: Always
+  digest: "sha256:5343a377b2174e4490fa86f1478bdf0fb7b4f41aac717de3f6cc5c4841fa84cf"
+  tag: latest # fallback if digest is removed
+  pullPolicy: IfNotPresent
 
 resources:
   requests:

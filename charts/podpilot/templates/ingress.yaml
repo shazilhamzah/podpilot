@@ -1,0 +1,25 @@
+{{- if .Values.basicAuth.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "podpilot.fullname" . }}
+  labels:
+    app.kubernetes.io/name: podpilot
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: {{ include "podpilot.fullname" . }}-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "podpilot.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

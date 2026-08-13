@@ -132,11 +132,16 @@ function fmtPct(actual, requested) {
   return `${Math.round((actual / requested) * 100)}%`;
 }
 
-function groupByNamespace(pods) {
+function groupByNamespace(pods, showEstimated = true) {
   const map = {};
   pods.forEach((p) => {
-    const cost_per_month = (p.cost_per_hour || 0) * 730;
-    const wasted_cost_per_month = p.wasted_cost_per_month || 0;
+    let cost_per_month = (p.cost_per_hour || 0) * 730;
+    let wasted_cost_per_month = p.wasted_cost_per_month || 0;
+
+    if (!showEstimated && p.cost_source === "estimated") {
+      cost_per_month = 0;
+      wasted_cost_per_month = 0;
+    }
 
     if (!map[p.namespace]) {
       map[p.namespace] = {
@@ -168,20 +173,27 @@ function groupByNamespace(pods) {
 // ---------------------------------------------------------------------------
 // Cost Source Badge
 // ---------------------------------------------------------------------------
-function CostSourceBadge({ source }) {
+const CostSourceBadge = ({ source }) => {
   if (source === "opencost") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#50e3c2]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#50e3c2] uppercase tracking-wider border border-[#50e3c2]/20 shadow-[0_0_8px_rgba(80,227,194,0.15)]">
-        🟢 Live Azure Cost
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#50e3c2]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#50e3c2] uppercase tracking-wider border border-[#50e3c2]/20 shadow-[0_0_8px_rgba(80,227,194,0.15)]" title="Pulled dynamically from OpenCost">
+        🟢 OpenCost
+      </span>
+    );
+  } else if (source === "azure_billed") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3b82f6]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#3b82f6] uppercase tracking-wider border border-[#3b82f6]/20" title="Pulled directly from your Azure Cost Management API (Actual)">
+        ✅ Azure Billed (Actual)
+      </span>
+    );
+  } else {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#f5a623] uppercase tracking-wider border border-[#f5a623]/20" title="Fallback estimation using Standard_B2s list price">
+        🟡 Estimated
       </span>
     );
   }
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5a623]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#f5a623] uppercase tracking-wider border border-[#f5a623]/20">
-      🟡 Estimated
-    </span>
-  );
-}
+};
 
 // ---------------------------------------------------------------------------
 // Donut chart (pure SVG, no library)
@@ -316,7 +328,7 @@ function WasteIcon({ pct }) {
 // ---------------------------------------------------------------------------
 // Namespace group row (collapsible)
 // ---------------------------------------------------------------------------
-function NamespaceGroup({ group, totalClusterCost }) {
+function NamespaceGroup({ group, totalClusterCost, showEstimated }) {
   const [open, setOpen] = useState(true);
   const pct = totalClusterCost > 0 ? (group.cost_per_month / totalClusterCost) * 100 : 0;
 
@@ -406,21 +418,27 @@ function NamespaceGroup({ group, totalClusterCost }) {
                 {/* Memory Efficiency bar */}
                 <EfficiencyBar actual={pod.memory_actual_gb} requested={pod.memory_requested_gb} />
 
-                {/* Cost per month */}
-                <span className="text-right font-semibold text-[#e7e9ee]">
-                  {fmt$(pod.cost_per_month)}
-                </span>
-
-                {/* Wasted */}
-                <span className="flex items-center justify-end gap-1.5">
-                  <WasteIcon pct={wastePct} />
-                  <span
-                    className="font-medium"
-                    style={{ color: wastePct > 50 ? "#f5a623" : wastePct < 15 ? "#50e3c2" : "#9099ab" }}
-                  >
-                    {fmt$(pod.wasted_cost_per_month)}
-                  </span>
-                </span>
+                {/* Cost per month & Wasted */}
+                {(!showEstimated && pod.cost_source === "estimated") ? (
+                  <div style={{ gridColumn: "span 2" }} className="flex items-center justify-end text-[12px] italic text-[#9099ab]">
+                    Costs not available
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-right font-semibold text-[#e7e9ee]">
+                      {fmt$(pod.cost_per_month)}
+                    </span>
+                    <span className="flex items-center justify-end gap-1.5">
+                      <WasteIcon pct={wastePct} />
+                      <span
+                        className="font-medium"
+                        style={{ color: wastePct > 50 ? "#f5a623" : wastePct < 15 ? "#50e3c2" : "#9099ab" }}
+                      >
+                        {fmt$(pod.wasted_cost_per_month)}
+                      </span>
+                    </span>
+                  </>
+                )}
               </div>
             );
           })}
@@ -436,6 +454,7 @@ function NamespaceGroup({ group, totalClusterCost }) {
 export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
   const [snap, setSnap] = useState(null);
   const [error, setError] = useState(null);
+  const [showEstimated, setShowEstimated] = useState(true);
 
   useEffect(() => {
     const fetchSnapshot = async () => {
@@ -480,7 +499,7 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
     ? snap.pods.filter(p => !SYSTEM_NAMESPACES.includes(p.namespace)) 
     : snap.pods;
 
-  const groups = groupByNamespace(filteredPods);
+  const groups = groupByNamespace(filteredPods, showEstimated);
 
   // Recalculate totals based on filtered pods
   const cluster_cost_per_month = groups.reduce((acc, g) => acc + g.cost_per_month, 0);
@@ -507,6 +526,16 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
             <p className="m-0 mt-2 text-[13.5px] text-[#9099ab]">
               {filteredPods.length} pods across {groups.length} namespaces
             </p>
+          </div>
+          
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[13px] font-medium text-[#9099ab]">Show estimated costs</span>
+            <button
+              onClick={() => setShowEstimated(!showEstimated)}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${showEstimated ? "bg-[#4f6df5]" : "bg-[#1c2235]"}`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${showEstimated ? "translate-x-[18px]" : "translate-x-1"}`} />
+            </button>
           </div>
         </div>
 
@@ -627,6 +656,7 @@ export default function CostBreakdown({ selectedSnapshotId, hideSystemK8s }) {
               key={g.namespace}
               group={g}
               totalClusterCost={cluster_cost_per_month}
+              showEstimated={showEstimated}
             />
           ))}
         </div>

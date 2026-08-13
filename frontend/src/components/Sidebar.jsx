@@ -172,13 +172,14 @@ export default function Sidebar({ selectedSnapshotId, activeTab, hideSystemK8s }
   let estimatedCost = 0;
   let wastedCost = 0;
   
+  const costSummary = snapData.cost_summary || {};
+  
   if (hideSystemK8s) {
     filteredPods.forEach(p => {
       estimatedCost += ((p.cost_per_hour || 0) * 730);
       wastedCost += (p.wasted_cost_per_month || 0);
     });
   } else {
-    const costSummary = snapData.cost_summary || {};
     estimatedCost = (costSummary.total_cost_per_hour || 0) * 730;
     wastedCost = costSummary.total_wasted_per_month || 0;
   }
@@ -215,7 +216,7 @@ export default function Sidebar({ selectedSnapshotId, activeTab, hideSystemK8s }
   const CLUSTER_STATS = [
     { label: "Total Nodes", value: totalNodes.toString(), tone: "neutral" },
     { label: "Total Pods", value: totalPods.toString(), tone: "neutral" },
-    { label: "Estimated Monthly Cost", value: fmt$(estimatedCost), tone: "neutral" },
+    { label: (costSummary?.cost_source === "azure_billed") ? "Billed Monthly Cost (Azure)" : "Estimated Monthly Cost", value: fmt$(estimatedCost), tone: "neutral" },
     { label: "Wasted Cost", value: fmt$(wastedCost), tone: wastedCost > 0 ? "warning" : "neutral" },
     { label: "Critical Issues", value: criticalIssuesCount.toString(), tone: criticalIssuesCount > 0 ? "critical" : "neutral" },
   ];

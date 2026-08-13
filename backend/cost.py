@@ -1,16 +1,54 @@
 import os
 import copy
+from datetime import datetime, timedelta
 import requests
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.costmanagement import CostManagementClient
 
 VM_SKU = "Standard_B2s"
 VM_CPU_CORES = 2
 VM_MEM_GB = 4
-VM_COST_PER_HOUR = 0.0416          # USD per hour
+VM_COST_PER_HOUR = 0.0416          # USD per hour (fallback)
 
 CPU_PRICE_PER_CORE_HOUR = VM_COST_PER_HOUR / VM_CPU_CORES
 RAM_PRICE_PER_GB_HOUR = VM_COST_PER_HOUR / VM_MEM_GB
 
 OPENCOST_URL = os.getenv("OPENCOST_ENDPOINT", "http://cost-analysis-agent.kube-system.svc.cluster.local:9003/allocation/compute")
+AZURE_SUBSCRIPTION_ID = os.getenv("AZURE_SUBSCRIPTION_ID")
+
+def fetch_azure_actual_cost():
+    if not AZURE_SUBSCRIPTION_ID:
+        return None
+    try:
+        credential = DefaultAzureCredential()
+        client = CostManagementClient(credential)
+        
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=1)
+        
+        scope = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}"
+        result = client.query.usage(
+            scope,
+            {
+                "type": "ActualCost",
+                "timeframe": "Custom",
+                "timePeriod": {
+                    "from": start_date.isoformat() + "Z",
+                    "to": end_date.isoformat() + "Z"
+                },
+                "dataset": {
+                    "granularity": "Daily",
+                    "aggregation": {
+                        "totalCost": {"name": "PreTaxCost", "function": "Sum"}
+                    }
+                }
+            }
+        )
+        if result.rows:
+            return result.rows[0][0] # return the sum
+    except Exception as e:
+        print(f"Failed to fetch Azure cost: {e}")
+    return None
 
 def fetch_opencost_data():
     try:
@@ -43,8 +81,13 @@ def enrich_with_cost(snapshot: dict) -> dict:
     """
     enriched = copy.deepcopy(snapshot)
     
+    azure_actual_cost = fetch_azure_actual_cost()
     opencost_data = fetch_opencost_data()
-    summary_source = "opencost" if opencost_data else "estimated"
+    
+    if azure_actual_cost is not None:
+        summary_source = "azure_billed"
+    else:
+        summary_source = "opencost" if opencost_data else "estimated"
     
     total_cost_per_hour = 0.0
     total_wasted_per_hour = 0.0
