@@ -18,4 +18,4 @@ docs/
 
 # Infra provisioning outputs — contains secrets (Cosmos DB connection string etc.)
 infra/.infra-outputs.ps1
-podpilot-values.yaml
+podpilot-values*.yaml
