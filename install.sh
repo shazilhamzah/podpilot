@@ -129,8 +129,10 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ing
 helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
 
 echo "Installing PodPilot..."
-helm upgrade --install podpilot podpilot/podpilot --namespace podpilot --create-namespace -f podpilot-values.yaml --version 0.1.2 2>/dev/null || \
-helm upgrade --install podpilot oci://podpilotregistry.azurecr.io/helm/podpilot --namespace podpilot --create-namespace -f podpilot-values.yaml --version 0.1.2
+helm upgrade --install podpilot https://raw.githubusercontent.com/shazilhamzah/podpilot/main/podpilot-0.1.2.tgz \
+  --namespace podpilot \
+  --create-namespace \
+  -f podpilot-values.yaml
 
 # 6. Confirmation
 echo "Waiting for PodPilot to become ready..."
