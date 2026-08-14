@@ -35,7 +35,7 @@ az functionapp config appsettings set --name $AppName --resource-group $Resource
     "IDENTITY_NAME=$IdentityName" `
     "PODPILOT_CLIENT_ID=$IdentityClientId" `
     "PODPILOT_TENANT_ID=$TenantId" `
-    "PODPILOT_MONGO_URI=mongodb://<COSMOS_ACCOUNT>:<KEY>@<COSMOS_ACCOUNT>.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000"
+    "PODPILOT_MONGO_URI=mongodb://<COSMOS_ACCOUNT>:<KEY>@<COSMOS_ACCOUNT>.mongo.cosmos.azure.com:10255/?ssl=true^&replicaSet=globaldb^&retrywrites=false^&maxIdleTimeMS=120000"
 
 Write-Host "Zipping the code..."
 Compress-Archive -Path "api\*" -DestinationPath "api.zip" -Force

@@ -16,6 +16,12 @@ logs.txt
 skills-lock.json
 docs/
 
-# Infra provisioning outputs — contains secrets (Cosmos DB connection string etc.)
+# Infra provisioning outputs - contains secrets (Cosmos DB connection string etc.)
 infra/.infra-outputs.ps1
 podpilot-values*.yaml
+.python_packages/
+*.zip
+test_unzip/
+api.zip
+api_deps.zip
+helm.zip

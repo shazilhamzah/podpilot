@@ -16,7 +16,7 @@ def onboard(req: func.HttpRequest) -> func.HttpResponse:
     try:
         req_body = req.get_json()
         oidc_issuer = req_body.get('oidc_issuer')
-        cluster_name = req_body.get('cluster_name')
+        cluster_name = req_body.get('cluster_name') or req_body.get('cluster')
     except Exception as e:
         return func.HttpResponse("Invalid JSON payload", status_code=400)
         
@@ -31,6 +31,7 @@ def onboard(req: func.HttpRequest) -> func.HttpResponse:
     client_id = os.environ.get("PODPILOT_CLIENT_ID", "")
     tenant_id = os.environ.get("PODPILOT_TENANT_ID", "")
     mongo_uri = os.environ.get("PODPILOT_MONGO_URI", "")
+    acr_token = os.environ.get("PODPILOT_ACR_TOKEN", "dummy_acr_token")
 
     try:
         credential = DefaultAzureCredential()
@@ -78,6 +79,8 @@ basicAuth:
 aiFoundry:
   endpoint: "{ai_endpoint}"
   deployment: "gpt-4o"
+
+imageCredentials: "{acr_token}"
 
 ingress:
   enabled: false

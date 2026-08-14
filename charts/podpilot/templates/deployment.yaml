@@ -18,6 +18,10 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         azure.workload.identity/use: "true"
     spec:
+      {{- if .Values.imageCredentials }}
+      imagePullSecrets:
+        - name: {{ include "podpilot.fullname" . }}-registry
+      {{- end }}
       serviceAccountName: {{ include "podpilot.fullname" . }}
       containers:
         - name: podpilot

@@ -29,6 +29,8 @@ aiFoundry:
   # No API key is required here.
   apiKey: ""
 
+imageCredentials: ""
+
 # ---------------------------------------------------------
 # 3. ADVANCED CUSTOMIZATIONS (Optional)
 # ---------------------------------------------------------
